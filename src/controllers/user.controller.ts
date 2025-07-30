@@ -1,0 +1,56 @@
+import { Request, Response, NextFunction } from 'express';
+import { UserService } from '../services/user.service';
+import { asyncHandler } from '../middleware/errorHandler';
+import { AuthRequest } from '../middleware/auth';
+import { SuccessResponse } from '../utils/response';
+
+export class UserController {
+  private userService: UserService;
+
+  constructor() {
+    this.userService = new UserService();
+  }
+
+  getProfile = asyncHandler(
+    async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+      const userId = req.user!.userId;
+      const user = await this.userService.getUserProfile(userId);
+      SuccessResponse(res, user, 'User profile retrieved successfully');
+    }
+  );
+
+  updateProfile = asyncHandler(
+    async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+      const userId = req.user!.userId;
+      const { name, email, country, interests, profilePicture } = req.body;
+
+      const user = await this.userService.updateUserProfile(userId, {
+        name,
+        email,
+        country,
+        interests,
+        profilePicture
+      });
+
+      SuccessResponse(res, user, 'Profile updated successfully');
+    }
+  );
+
+  getUserById = asyncHandler(
+    async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+      const requesterId = req.user!.userId;
+      const targetUserId = req.params.id;
+
+      const user = await this.userService.getUserById(requesterId, targetUserId);
+      SuccessResponse(res, user, 'User retrieved successfully');
+    }
+  );
+
+  deleteUser = asyncHandler(
+    async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+      const userId = req.params.id;
+      const result = await this.userService.deleteUser(userId);
+      SuccessResponse(res, result, 'User deleted successfully');
+    }
+  );
+}

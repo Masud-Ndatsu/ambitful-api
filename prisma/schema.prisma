@@ -1,0 +1,253 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String     @id @default(cuid())
+  name           String
+  email          String     @unique
+  password       String
+  country        String
+  status         UserStatus @default(ACTIVE)
+  verified       Boolean    @default(false)
+  signupDate     DateTime   @default(now())
+  lastActive     DateTime   @default(now())
+  interests      String[]
+  profilePicture String?
+  role           UserRole   @default(USER)
+
+  conversations      ChatConversation[]
+  tokens             Token[]
+  activities         UserActivity[]
+  applications       Application[]
+  savedOpportunities SavedOpportunity[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Opportunity {
+  id          String            @id @default(cuid())
+  title       String
+  type        OpportunityType
+  description String
+  deadline    DateTime
+  location    String
+  amount      String?
+  link        String
+  category    String
+  status      OpportunityStatus @default(DRAFT)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  detail             OpportunityDetail?
+  applications       Application[]
+  savedOpportunities SavedOpportunity[]
+
+  @@map("opportunities")
+}
+
+model OpportunityDetail {
+  id                      String   @id @default(cuid())
+  opportunityId           String   @unique
+  fullDescription         String
+  applicationInstructions String
+  eligibility             String[]
+  benefits                String[]
+  views                   Int      @default(0)
+  applications            Int      @default(0)
+  saves                   Int      @default(0)
+
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  @@map("opportunity_details")
+}
+
+model AIDraft {
+  id            String        @id @default(cuid())
+  title         String
+  source        String
+  status        DraftStatus   @default(PENDING)
+  priority      DraftPriority @default(MEDIUM)
+  feedback      String?
+  reviewedAt    DateTime?
+  extractedData Json
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@map("ai_drafts")
+}
+
+model ChatConversation {
+  id        String        @id @default(cuid())
+  userId    String
+  messages  ChatMessage[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("chat_conversations")
+}
+
+model ChatMessage {
+  id             String        @id @default(cuid())
+  conversationId String
+  content        String
+  sender         MessageSender
+  timestamp      DateTime      @default(now())
+  metadata       Json?
+
+  conversation ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@map("chat_messages")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+
+  @@map("user_status")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+
+  @@map("user_role")
+}
+
+enum OpportunityType {
+  SCHOLARSHIP
+  INTERNSHIP
+  FELLOWSHIP
+  GRANT
+
+  @@map("opportunity_type")
+}
+
+enum OpportunityStatus {
+  PUBLISHED
+  DRAFT
+  ARCHIVED
+
+  @@map("opportunity_status")
+}
+
+enum DraftStatus {
+  PENDING
+  APPROVED
+  REJECTED
+
+  @@map("draft_status")
+}
+
+enum DraftPriority {
+  HIGH
+  MEDIUM
+  LOW
+
+  @@map("draft_priority")
+}
+
+enum MessageSender {
+  USER
+  BOT
+
+  @@map("message_sender")
+}
+
+model Token {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  type      TokenType
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  used      Boolean   @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("tokens")
+}
+
+enum TokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+
+  @@map("token_type")
+}
+
+model UserActivity {
+  id          String   @id @default(cuid())
+  userId      String
+  action      String
+  description String
+  ipAddress   String?
+  userAgent   String?
+  timestamp   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_activities")
+}
+
+model Application {
+  id              String            @id @default(cuid())
+  userId          String
+  opportunityId   String
+  status          ApplicationStatus @default(PENDING)
+  applicationData Json?
+  submittedAt     DateTime          @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, opportunityId])
+  @@map("applications")
+}
+
+model SavedOpportunity {
+  id            String   @id @default(cuid())
+  userId        String
+  opportunityId String
+  savedAt       DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, opportunityId])
+  @@map("saved_opportunities")
+}
+
+enum ApplicationStatus {
+  PENDING
+  SUBMITTED
+  REVIEWED
+  ACCEPTED
+  REJECTED
+
+  @@map("application_status")
+}
+
+model Testimonial {
+  id          String   @id @default(cuid())
+  name        String
+  age         Int
+  location    String
+  opportunity String
+  testimonial String   @db.Text
+  image       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("testimonials")
+}
