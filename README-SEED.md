@@ -22,7 +22,7 @@ This project includes a seed script to populate the database with initial data, 
 
 ### Method 1: Using npm script (Recommended)
 
-```bash
+```bashtouch
 npm run seed
 ```
 
