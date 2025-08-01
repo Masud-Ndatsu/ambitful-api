@@ -202,8 +202,8 @@ export class OpportunityService {
       throw new CustomError("Opportunity not found", 404);
     }
 
-    const baseUrl = process.env.APP_URL || "http://localhost:3000";
-    const opportunityUrl = `${baseUrl}/opportunities/${opportunityId}`;
+    const baseUrl = process.env.FRONTEND_URL || "http://localhost:8080";
+    const opportunityUrl = `${baseUrl}/opportunities?opportunity=${opportunityId}`;
 
     let shareUrl: string;
 
