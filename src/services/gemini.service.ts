@@ -26,7 +26,6 @@ export interface AIResponse {
 
 export class GeminiService {
   private genAI: GoogleGenAI;
-  private model: any;
   private opportunityRepository: OpportunityRepository;
 
   constructor() {
@@ -36,7 +35,6 @@ export class GeminiService {
     }
 
     this.genAI = new GoogleGenAI({ apiKey });
-    this.model = this.genAI.models.generateContent;
     this.opportunityRepository = new OpportunityRepository();
   }
 
@@ -52,9 +50,16 @@ export class GeminiService {
 
       const fullPrompt = `${systemPrompt}\n\n${conversationHistory}\n\nUser: ${message}\n\nAssistant:`;
 
-      const result = await this.model.generateContent(fullPrompt);
-      const response = result.response;
-      const responseText = response.text();
+      const result = await this.genAI.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: fullPrompt,
+        config: {
+          thinkingConfig: {
+            thinkingBudget: 0, // Disables thinking for faster responses
+          },
+        },
+      });
+      const responseText = result.text || "";
 
       // Extract suggestions and related opportunities based on context
       const suggestions = await this.generateSuggestions(message, context);
@@ -269,8 +274,16 @@ Your role is to provide helpful, personalized career guidance and opportunity re
         specificQuery ? ` Specifically: ${specificQuery}` : ""
       }`;
 
-      const result = await this.model.generateContent(prompt);
-      return result.response.text();
+      const result = await this.genAI.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+        config: {
+          thinkingConfig: {
+            thinkingBudget: 0,
+          },
+        },
+      });
+      return result.text || "";
     } catch (error) {
       console.error("Error generating career advice:", error);
       throw new CustomError("Failed to generate career advice", 500);
@@ -287,8 +300,16 @@ Your role is to provide helpful, personalized career guidance and opportunity re
         ", "
       )}. Include specific fields, organizations, or programs to look for.`;
 
-      const result = await this.model.generateContent(prompt);
-      return result.response.text();
+      const result = await this.genAI.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+        config: {
+          thinkingConfig: {
+            thinkingBudget: 0,
+          },
+        },
+      });
+      return result.text || "";
     } catch (error) {
       console.error("Error generating opportunity recommendations:", error);
       throw new CustomError(
@@ -296,5 +317,107 @@ Your role is to provide helpful, personalized career guidance and opportunity re
         500
       );
     }
+  }
+
+  async generateImprovedOpportunityData(rawOpportunityText: string): Promise<{
+    description: string;
+    benefits: string[];
+    eligibility: string[];
+    howToApply: string[];
+  }> {
+    try {
+      const prompt = `Extract and improve the following opportunity information into a structured format. Make the content concise, clear, and actionable:
+
+Raw opportunity text:
+${rawOpportunityText}
+
+Please structure the response as follows:
+1. Description: A concise 3-5 sentence summary of what this opportunity is about
+2. Benefits: List specific benefits/rewards (be concrete, include monetary amounts if mentioned)
+3. Eligibility: List clear eligibility requirements 
+4. How to Apply: Step-by-step application process
+
+Format your response exactly like this JSON structure:
+{
+  "description": "Clear, concise description here",
+  "benefits": ["Benefit 1", "Benefit 2", "Benefit 3"],
+  "eligibility": ["Requirement 1", "Requirement 2", "Requirement 3"],
+  "howToApply": ["Step 1", "Step 2", "Step 3"]
+}
+
+Make sure each array item is specific and actionable. For benefits, include monetary amounts when available. For eligibility, be specific about age, education, experience requirements. For application steps, provide clear actionable instructions.`;
+
+      const result = await this.genAI.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+        // config: {
+        //   thinkingConfig: {
+        //     thinkingBudget: 0,
+        //   },
+        // },
+      });
+      const responseText = result.text || "";
+
+      // Parse the JSON response
+      try {
+        const cleanedResponse = this.cleanAIResponse(responseText);
+        const parsedResponse = JSON.parse(cleanedResponse);
+        console.log({ parsedResponse });
+        // Validate the structure
+        if (
+          !parsedResponse.description ||
+          !Array.isArray(parsedResponse.benefits) ||
+          !Array.isArray(parsedResponse.eligibility) ||
+          !Array.isArray(parsedResponse.howToApply)
+        ) {
+          throw new CustomError("Invalid response structure", 400);
+        }
+
+        return {
+          description: parsedResponse.description,
+          benefits: parsedResponse.benefits,
+          eligibility: parsedResponse.eligibility,
+          howToApply: parsedResponse.howToApply,
+        };
+      } catch (parseError) {
+        console.error("Failed to parse AI response:", parseError);
+        // Fallback: extract manually if JSON parsing fails
+        return this.extractOpportunityDataManually(
+          responseText,
+          rawOpportunityText
+        );
+      }
+    } catch (error) {
+      console.error("Error generating improved opportunity data:", error);
+      throw new CustomError(
+        "Failed to generate improved opportunity data",
+        500
+      );
+    }
+  }
+
+  private extractOpportunityDataManually(
+    _aiResponse: string,
+    originalText: string
+  ): {
+    description: string;
+    benefits: string[];
+    eligibility: string[];
+    howToApply: string[];
+  } {
+    // Fallback manual extraction logic
+
+    return {
+      description:
+        originalText.split("\n")[0] || "Opportunity details available",
+      benefits: ["Benefits information available in full description"],
+      eligibility: ["Please refer to the full opportunity details"],
+      howToApply: ["Visit the opportunity link for application instructions"],
+    };
+  }
+
+  cleanAIResponse(raw: string): string {
+    const match = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+    return match ? match[1].trim() : raw.trim();
   }
 }

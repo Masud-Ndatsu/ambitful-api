@@ -10,7 +10,8 @@ import {
   Opportunity,
 } from "../types";
 import { CustomError } from "../middleware/errorHandler";
-import { OpportunityStatus } from "@prisma/client";
+import { OpportunityEvents } from "../events/opportunity.event";
+import { OPPORTUNITY_EVENTS } from "../enums";
 
 export class AdminOpportunityService {
   private opportunityRepository: OpportunityRepository;
@@ -36,7 +37,6 @@ export class AdminOpportunityService {
       ),
       this.opportunityRepository.getOpportunityStats(),
     ]);
-
     return {
       opportunities: result.opportunities.map((opp) =>
         this.formatAdminOpportunity(opp)
@@ -59,7 +59,7 @@ export class AdminOpportunityService {
     link: string;
     eligibility: string[];
     benefits: string[];
-    applicationInstructions: string;
+    applicationInstructions: string[];
     category: string;
     status: string;
   }): Promise<Opportunity> {
@@ -68,8 +68,16 @@ export class AdminOpportunityService {
       deadline: new Date(opportunityData.deadline),
     };
 
+    console.log({ processedData });
+
     const opportunity = await this.opportunityRepository.createOpportunity(
       processedData
+    );
+
+    OpportunityEvents.emit(
+      OPPORTUNITY_EVENTS.IMPROVE_OPPORTUNITY_DATA,
+      opportunity.id,
+      processedData.fullDescription
     );
     return this.formatOpportunity(opportunity);
   }
@@ -163,7 +171,7 @@ export class AdminOpportunityService {
       ...baseOpportunity,
       fullDescription: opportunity.detail?.fullDescription || "",
       applicationInstructions:
-        opportunity.detail?.applicationInstructions || "",
+        opportunity.detail?.applicationInstructions || [],
       eligibility: opportunity.detail?.eligibility || [],
       benefits: opportunity.detail?.benefits || [],
       views: opportunity.detail?.views || 0,

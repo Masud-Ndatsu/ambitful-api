@@ -58,7 +58,7 @@ model OpportunityDetail {
   id                      String   @id @default(cuid())
   opportunityId           String   @unique
   fullDescription         String
-  applicationInstructions String
+  applicationInstructions String[]
   eligibility             String[]
   benefits                String[]
   views                   Int      @default(0)

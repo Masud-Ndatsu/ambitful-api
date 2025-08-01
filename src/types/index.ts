@@ -29,7 +29,7 @@ export interface Opportunity {
 
 export interface OpportunityDetail extends Opportunity {
   fullDescription: string;
-  applicationInstructions: string;
+  applicationInstructions: string[];
   eligibility: string[];
   benefits: string[];
   views: number;

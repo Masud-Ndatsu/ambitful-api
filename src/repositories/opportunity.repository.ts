@@ -538,9 +538,9 @@ export class OpportunityRepository {
     location: string;
     amount?: string;
     link: string;
-    eligibility: string[];
-    benefits: string[];
-    applicationInstructions: string;
+    eligibility?: string[];
+    benefits?: string[];
+    applicationInstructions?: string[];
     category: string;
     status: string;
   }): Promise<any> {
@@ -555,19 +555,18 @@ export class OpportunityRepository {
         link: opportunityData.link,
         category: opportunityData.category,
         status: opportunityData.status.toUpperCase() as any,
-        ...(opportunityData.eligibility && {
-          detail: {
-            create: {
-              fullDescription: opportunityData.fullDescription,
-              applicationInstructions: opportunityData.applicationInstructions,
-              eligibility: opportunityData.eligibility,
-              benefits: opportunityData.benefits,
-              views: 0,
-              applications: 0,
-              saves: 0,
-            },
+        detail: {
+          create: {
+            fullDescription: opportunityData.fullDescription || "",
+            applicationInstructions:
+              opportunityData.applicationInstructions || [],
+            eligibility: opportunityData.eligibility || [],
+            benefits: opportunityData.benefits || [],
+            views: 0,
+            applications: 0,
+            saves: 0,
           },
-        }),
+        },
       },
       include: {
         detail: true,
@@ -624,7 +623,9 @@ export class OpportunityRepository {
       );
     }
 
-    await Promise.all(updatePromises);
+    const result = await Promise.all(updatePromises);
+
+    console.log({ result });
 
     return await prisma.opportunity.findUnique({
       where: { id },
