@@ -8,6 +8,7 @@ import userRoutes from './routes/users';
 import adminRoutes from './routes/admin';
 import opportunityRoutes from './routes/opportunities';
 import { globalErrorHandler, notFound } from './middleware/errorHandler';
+import { prisma } from './database/prisma';
 
 dotenv.config();
 
@@ -52,5 +53,24 @@ process.on('unhandledRejection', (err: any) => {
   console.error(err.name, err.message);
   server.close(() => {
     process.exit(1);
+  });
+});
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM received. Shutting down gracefully...');
+  await prisma.$disconnect();
+  server.close(() => {
+    console.log('Process terminated');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', async () => {
+  console.log('SIGINT received. Shutting down gracefully...');
+  await prisma.$disconnect();
+  server.close(() => {
+    console.log('Process terminated');
+    process.exit(0);
   });
 });
