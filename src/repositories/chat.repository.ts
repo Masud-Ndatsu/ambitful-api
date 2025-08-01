@@ -1,5 +1,5 @@
-import { prisma } from '../database/prisma';
-import { ChatConversation, ChatMessage } from '@prisma/client';
+import { prisma } from "../database/prisma";
+import { ChatConversation, ChatMessage, MessageSender } from "@prisma/client";
 
 export interface PaginationOptions {
   page: number;
@@ -10,58 +10,64 @@ export class ChatRepository {
   async createConversation(userId: string): Promise<ChatConversation> {
     return await prisma.chatConversation.create({
       data: {
-        userId
-      }
+        userId,
+      },
     });
   }
 
-  async findConversationById(id: string, userId: string): Promise<(ChatConversation & { messages: ChatMessage[] }) | null> {
+  async findConversationById(
+    id: string,
+    userId: string
+  ): Promise<(ChatConversation & { messages: ChatMessage[] }) | null> {
     return await prisma.chatConversation.findFirst({
       where: {
         id,
-        userId
+        userId,
       },
       include: {
         messages: {
           orderBy: {
-            timestamp: 'asc'
-          }
-        }
-      }
+            timestamp: "asc",
+          },
+        },
+      },
     });
   }
 
   async findUserConversations(
     userId: string,
     pagination: PaginationOptions
-  ): Promise<{ conversations: (ChatConversation & { messages: ChatMessage[] })[]; total: number }> {
+  ): Promise<{
+    conversations: (ChatConversation & { messages: ChatMessage[] })[];
+    total: number;
+  }> {
     const { page, limit } = pagination;
     const skip = (page - 1) * limit;
 
     const [conversations, total] = await Promise.all([
       prisma.chatConversation.findMany({
         where: {
-          userId
+          userId,
         },
         skip,
         take: limit,
         orderBy: {
-          updatedAt: 'desc'
+          updatedAt: "desc",
         },
         include: {
           messages: {
             orderBy: {
-              timestamp: 'desc'
+              timestamp: "desc",
             },
-            take: 1 // Only get the last message for conversation list
-          }
-        }
+            take: 1, // Only get the last message for conversation list
+          },
+        },
       }),
       prisma.chatConversation.count({
         where: {
-          userId
-        }
-      })
+          userId,
+        },
+      }),
     ]);
 
     return { conversations, total };
@@ -70,27 +76,27 @@ export class ChatRepository {
   async addMessageToConversation(
     conversationId: string,
     content: string,
-    sender: 'user' | 'bot',
+    sender: "user" | "bot",
     metadata?: any
   ): Promise<ChatMessage> {
     const message = await prisma.chatMessage.create({
       data: {
         conversationId,
         content,
-        sender,
+        sender: sender.toUpperCase() as MessageSender,
         metadata,
-        timestamp: new Date()
-      }
+        timestamp: new Date(),
+      },
     });
 
     // Update conversation's updatedAt timestamp
     await prisma.chatConversation.update({
       where: {
-        id: conversationId
+        id: conversationId,
       },
       data: {
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+      },
     });
 
     return message;
@@ -101,8 +107,8 @@ export class ChatRepository {
       const conversation = await prisma.chatConversation.findFirst({
         where: {
           id,
-          userId
-        }
+          userId,
+        },
       });
 
       if (!conversation) {
@@ -111,8 +117,8 @@ export class ChatRepository {
 
       await prisma.chatConversation.delete({
         where: {
-          id
-        }
+          id,
+        },
       });
 
       return true;
@@ -129,8 +135,8 @@ export class ChatRepository {
     const conversation = await prisma.chatConversation.findFirst({
       where: {
         id: conversationId,
-        userId
-      }
+        userId,
+      },
     });
 
     if (!conversation) {
@@ -139,12 +145,12 @@ export class ChatRepository {
 
     return await prisma.chatMessage.findMany({
       where: {
-        conversationId
+        conversationId,
       },
       orderBy: {
-        timestamp: 'desc'
+        timestamp: "desc",
       },
-      take: limit
+      take: limit,
     });
   }
 
@@ -159,15 +165,15 @@ export class ChatRepository {
           name: true,
           email: true,
           country: true,
-          interests: true
-        }
+          interests: true,
+        },
       }),
-      this.getConversationHistory(conversationId, userId, 10)
+      this.getConversationHistory(conversationId, userId, 10),
     ]);
 
     return {
       userProfile: user,
-      recentMessages: recentMessages.reverse() // Reverse to get chronological order
+      recentMessages: recentMessages.reverse(), // Reverse to get chronological order
     };
   }
 }
