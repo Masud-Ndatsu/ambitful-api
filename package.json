@@ -2,17 +2,18 @@
   "name": "ai-chance-maker-api",
   "version": "1.0.0",
   "description": "API for AI Chance Maker application",
-  "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "nodemon --exec \"node --loader ts-node/esm --no-warnings src/index.ts\"",
+    "dev": "nodemon --exec ts-node -r tsconfig-paths/register src/index.ts",
+    "dev:build": "concurrently \"npm run build:watch\" \"nodemon dist/index.js\"",
     "build": "CI=false rimraf ./dist && tsc --build tsconfig.json",
+    "build:watch": "tsc --build tsconfig.json --watch",
     "start": "node dist/index.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:push": "prisma db push",
     "prisma:studio": "prisma studio",
-    "seed": "node --loader ts-node/esm --no-warnings prisma/seed.ts"
+    "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
     "@google/genai": "^1.11.0",
@@ -38,6 +39,7 @@
     "@types/jsonwebtoken": "^9.0.5",
     "@types/node": "^20.10.5",
     "@types/nodemailer": "^6.4.14",
+    "concurrently": "^9.2.0",
     "nodemon": "^3.0.2",
     "prisma": "^5.7.1",
     "rimraf": "^6.0.1",
