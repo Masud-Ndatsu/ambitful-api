@@ -68,8 +68,6 @@ public/uploads/
 # Documentation
 docs/build/
 
-# TypeScript
-*.tsbuildinfo
 
 # Prisma
 .env.db
