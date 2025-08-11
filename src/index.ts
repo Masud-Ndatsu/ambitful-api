@@ -22,7 +22,11 @@ const PORT = process.env.PORT || 3000;
 app.use(helmet());
 app.use(
   cors({
-    origin: ["https://www.ambitful.ai", "http://localhost:8080"],
+    origin: [
+      "https://www.ambitful.ai",
+      "http://localhost:8080",
+      "http://134.122.17.163",
+    ],
     credentials: true,
   })
 );
