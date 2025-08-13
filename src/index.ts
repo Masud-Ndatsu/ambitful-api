@@ -25,7 +25,7 @@ app.use(
     origin: [
       "https://www.ambitful.ai",
       "http://localhost:8080",
-      "http://134.122.17.163",
+      "http://134.122.17.163:80",
     ],
     credentials: true,
   })
