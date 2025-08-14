@@ -68,8 +68,6 @@ export class AdminOpportunityService {
       deadline: new Date(opportunityData.deadline),
     };
 
-    console.log({ processedData });
-
     const opportunity = await this.opportunityRepository.createOpportunity(
       processedData
     );
