@@ -124,7 +124,7 @@ export class OpportunityRepository {
         filters: filterData,
       };
     } catch (error) {
-      console.error('Error in findOpportunitiesWithPagination:', error);
+      console.error("Error in findOpportunitiesWithPagination:", error);
       throw error;
     }
   }
@@ -143,7 +143,7 @@ export class OpportunityRepository {
         },
       });
     } catch (error) {
-      console.error('Error in findOpportunityById:', error);
+      console.error("Error in findOpportunityById:", error);
       throw error;
     }
   }
@@ -172,7 +172,7 @@ export class OpportunityRepository {
 
       return opportunity;
     } catch (error) {
-      console.error('Error in findOpportunityWithDetailById:', error);
+      console.error("Error in findOpportunityWithDetailById:", error);
       throw error;
     }
   }
@@ -193,7 +193,7 @@ export class OpportunityRepository {
         take: limit,
       });
     } catch (error) {
-      console.error('Error in findFeaturedOpportunities:', error);
+      console.error("Error in findFeaturedOpportunities:", error);
       throw error;
     }
   }
@@ -224,7 +224,7 @@ export class OpportunityRepository {
         take: limit,
       });
     } catch (error) {
-      console.error('Error in findTrendingOpportunities:', error);
+      console.error("Error in findTrendingOpportunities:", error);
       throw error;
     }
   }
@@ -262,7 +262,7 @@ export class OpportunityRepository {
         take: limit,
       });
     } catch (error) {
-      console.error('Error in findSimilarOpportunities:', error);
+      console.error("Error in findSimilarOpportunities:", error);
       throw error;
     }
   }
@@ -297,7 +297,7 @@ export class OpportunityRepository {
         categories: categories.map((c) => c.category),
       };
     } catch (error) {
-      console.error('Error in getFilterOptions:', error);
+      console.error("Error in getFilterOptions:", error);
       throw error;
     }
   }
@@ -316,7 +316,7 @@ export class OpportunityRepository {
         });
       }
     } catch (error) {
-      console.error('Error in incrementApplicationCount:', error);
+      console.error("Error in incrementApplicationCount:", error);
       throw error;
     }
   }
@@ -335,7 +335,7 @@ export class OpportunityRepository {
         });
       }
     } catch (error) {
-      console.error('Error in incrementSaveCount:', error);
+      console.error("Error in incrementSaveCount:", error);
       throw error;
     }
   }
@@ -377,7 +377,7 @@ export class OpportunityRepository {
       });
       return true;
     } catch (error) {
-      console.error('Error in unsaveOpportunity:', error);
+      console.error("Error in unsaveOpportunity:", error);
       return false;
     }
   }
@@ -397,7 +397,7 @@ export class OpportunityRepository {
       });
       return saved !== null;
     } catch (error) {
-      console.error('Error in isOpportunitySaved:', error);
+      console.error("Error in isOpportunitySaved:", error);
       throw error;
     }
   }
@@ -432,7 +432,7 @@ export class OpportunityRepository {
         total,
       };
     } catch (error) {
-      console.error('Error in findSavedOpportunities:', error);
+      console.error("Error in findSavedOpportunities:", error);
       throw error;
     }
   }
@@ -460,7 +460,7 @@ export class OpportunityRepository {
         applicationId: application.id,
       };
     } catch (error) {
-      console.error('Error in applyToOpportunity:', error);
+      console.error("Error in applyToOpportunity:", error);
       return {
         applied: false,
         applicationId: null,
@@ -482,7 +482,7 @@ export class OpportunityRepository {
         },
       });
     } catch (error) {
-      console.error('Error in findUserApplications:', error);
+      console.error("Error in findUserApplications:", error);
       throw error;
     }
   }
@@ -502,7 +502,7 @@ export class OpportunityRepository {
       }
       return true;
     } catch (error) {
-      console.error('Error in recordOpportunityView:', error);
+      console.error("Error in recordOpportunityView:", error);
       return false;
     }
   }
@@ -580,7 +580,7 @@ export class OpportunityRepository {
         filters: filterData,
       };
     } catch (error) {
-      console.error('Error in findAdminOpportunitiesWithPagination:', error);
+      console.error("Error in findAdminOpportunitiesWithPagination:", error);
       throw error;
     }
   }
@@ -599,7 +599,7 @@ export class OpportunityRepository {
 
       return { published, draft, archived };
     } catch (error) {
-      console.error('Error in getOpportunityStats:', error);
+      console.error("Error in getOpportunityStats:", error);
       throw error;
     }
   }
@@ -649,7 +649,7 @@ export class OpportunityRepository {
         },
       });
     } catch (error) {
-      console.error('Error in createOpportunity:', error);
+      console.error("Error in createOpportunity:", error);
       throw error;
     }
   }
@@ -688,7 +688,12 @@ export class OpportunityRepository {
       }
 
       // Update opportunity detail if detail fields are provided
-      if (fullDescription || applicationInstructions || eligibility || benefits) {
+      if (
+        fullDescription ||
+        applicationInstructions ||
+        eligibility ||
+        benefits
+      ) {
         const detailUpdateData: any = {};
         if (fullDescription) detailUpdateData.fullDescription = fullDescription;
         if (applicationInstructions)
@@ -713,7 +718,7 @@ export class OpportunityRepository {
         include: { detail: true },
       });
     } catch (error) {
-      console.error('Error in updateOpportunity:', error);
+      console.error("Error in updateOpportunity:", error);
       throw error;
     }
   }
@@ -724,7 +729,7 @@ export class OpportunityRepository {
         where: { id },
       });
     } catch (error) {
-      console.error('Error in deleteOpportunity:', error);
+      console.error("Error in deleteOpportunity:", error);
       throw error;
     }
   }
@@ -749,7 +754,7 @@ export class OpportunityRepository {
 
       return result.count;
     } catch (error) {
-      console.error('Error in bulkUpdateOpportunities:', error);
+      console.error("Error in bulkUpdateOpportunities:", error);
       throw error;
     }
   }
@@ -798,7 +803,7 @@ export class OpportunityRepository {
         viewsHistory,
       };
     } catch (error) {
-      console.error('Error in getOpportunityAnalytics:', error);
+      console.error("Error in getOpportunityAnalytics:", error);
       throw error;
     }
   }
