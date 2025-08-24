@@ -11,8 +11,13 @@ import authRoutes from "./routes/auth";
 import userRoutes from "./routes/users";
 import adminRoutes from "./routes/admin";
 import opportunityRoutes from "./routes/opportunities";
+import crawlerRoutes from "./routes/crawler";
 import { globalErrorHandler, notFound } from "./middleware/errorHandler";
 import { prisma } from "./database/prisma";
+
+// Initialize event listeners
+import "./events/opportunity.event";
+import "./events/crawler.event";
 
 dotenv.config();
 
@@ -43,6 +48,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/opportunities", opportunityRoutes);
+app.use("/api/crawler", crawlerRoutes);
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });

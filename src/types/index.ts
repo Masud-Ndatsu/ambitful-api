@@ -43,8 +43,38 @@ export interface AIDraft {
   source: string;
   status: "pending" | "approved" | "rejected";
   priority: "high" | "medium" | "low";
-  extractedData: Partial<Opportunity>;
-  createdAt: string;
+
+  // Raw scraped content
+  rawContent: string;
+  dateScraped: Date;
+
+  // Extracted opportunity fields (individual columns)
+  extractedTitle?: string | null;
+  extractedType?: "scholarship" | "internship" | "fellowship" | "grant" | null;
+  extractedDescription?: string | null;
+  extractedDeadline?: Date | null;
+  extractedLocation?: string | null;
+  extractedAmount?: string | null;
+  extractedLink?: string | null;
+  extractedCategory?: string | null;
+
+  // Extracted detail fields
+  extractedFullDescription?: string | null;
+  extractedApplicationInstructions?: string[];
+  extractedEligibility?: string[];
+  extractedBenefits?: string[];
+
+  // Additional extracted data (JSON)
+  extractedData?: any;
+
+  // Review fields
+  feedback?: string | null;
+  reviewedAt?: Date | null;
+  reviewedBy?: string | null;
+  opportunityId?: string | null;
+
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface ChatConversation {
@@ -114,4 +144,15 @@ export interface Testimonial {
   image?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ParsedOpportunity {
+  title: string;
+  description: string;
+  type: "SCHOLARSHIP" | "INTERNSHIP" | "FELLOWSHIP" | "GRANT";
+  deadline: string;
+  link: string;
+  location: string;
+  amount: string | null;
+  category: string;
 }

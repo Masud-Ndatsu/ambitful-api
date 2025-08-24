@@ -245,22 +245,6 @@ export class AdminController {
     }
   );
 
-  scanOpportunities = asyncHandler(
-    async (
-      req: AuthRequest,
-      res: Response,
-      next: NextFunction
-    ): Promise<void> => {
-      const { urls, keywords } = req.body;
-
-      const result = await this.aiDraftsService.scanOpportunities(
-        urls,
-        keywords
-      );
-      SuccessResponse(res, result, "Opportunities scanned successfully");
-    }
-  );
-
   getAIDraftStats = asyncHandler(
     async (
       req: AuthRequest,
@@ -531,6 +515,44 @@ export class AdminController {
         stats,
         "Testimonial statistics retrieved successfully"
       );
+    }
+  );
+
+  // New AI Draft methods
+  regenerateAIDraft = asyncHandler(
+    async (
+      req: AuthRequest,
+      res: Response,
+      next: NextFunction
+    ): Promise<void> => {
+      const { id } = req.params;
+      const result = await this.aiDraftsService.regenerateDraft(id);
+      SuccessResponse(res, result, "Draft regenerated successfully");
+    }
+  );
+
+  updateDraftPriority = asyncHandler(
+    async (
+      req: AuthRequest,
+      res: Response,
+      next: NextFunction
+    ): Promise<void> => {
+      const { id } = req.params;
+      const { priority } = req.body;
+      const result = await this.aiDraftsService.updateDraftPriority(id, priority);
+      SuccessResponse(res, result, "Draft priority updated successfully");
+    }
+  );
+
+  bulkDeleteAIDrafts = asyncHandler(
+    async (
+      req: AuthRequest,
+      res: Response,
+      next: NextFunction
+    ): Promise<void> => {
+      const { draftIds } = req.body;
+      const result = await this.aiDraftsService.bulkDeleteDrafts(draftIds);
+      SuccessResponse(res, result, "Drafts deleted successfully");
     }
   );
 }

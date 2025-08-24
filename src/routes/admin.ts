@@ -141,14 +141,6 @@ router.post(
   adminController.reviewAIDraft
 );
 
-router.post(
-  "/ai-drafts/scan",
-  authenticateToken,
-  requireRole(["admin"]),
-  validateBody(scanOpportunitiesSchema),
-  adminController.scanOpportunities
-);
-
 router.delete(
   "/ai-drafts/:id",
   authenticateToken,
@@ -169,6 +161,29 @@ router.post(
   authenticateToken,
   requireRole(["admin"]),
   adminController.bulkReviewAIDrafts
+);
+
+router.post(
+  "/ai-drafts/:id/regenerate",
+  authenticateToken,
+  requireRole(["admin"]),
+  validateParams(draftIdParamsSchema),
+  adminController.regenerateAIDraft
+);
+
+router.put(
+  "/ai-drafts/:id/priority",
+  authenticateToken,
+  requireRole(["admin"]),
+  validateParams(draftIdParamsSchema),
+  adminController.updateDraftPriority
+);
+
+router.post(
+  "/ai-drafts/bulk-delete",
+  authenticateToken,
+  requireRole(["admin"]),
+  adminController.bulkDeleteAIDrafts
 );
 
 // Analytics routes
