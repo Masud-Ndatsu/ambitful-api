@@ -5,6 +5,7 @@ import {
   OpportunityType,
   OpportunityStatus,
 } from "@prisma/client";
+import { ParsedOpportunity } from "../types";
 
 export interface OpportunityFilters {
   search?: string;
@@ -33,6 +34,83 @@ export interface PaginatedOpportunities {
 }
 
 export class OpportunityRepository {
+  async filterDuplicateOpportunities(
+    opportunities: ParsedOpportunity[]
+  ): Promise<ParsedOpportunity[]> {
+    try {
+      if (!opportunities || opportunities.length === 0) {
+        return [];
+      }
+
+      const uniqueOpportunities: ParsedOpportunity[] = [];
+
+      for (const opportunity of opportunities) {
+        // Check if opportunity with similar title and description already exists in database
+        const existingOpportunity = await prisma.opportunity.findFirst({
+          where: {
+            OR: [
+              {
+                AND: [
+                  {
+                    title: {
+                      contains: opportunity.title,
+                      mode: "insensitive",
+                    },
+                  },
+                  {
+                    description: {
+                      contains: opportunity.description.substring(0, 100),
+                      mode: "insensitive",
+                    },
+                  },
+                ],
+              },
+              {
+                AND: [
+                  {
+                    title: {
+                      mode: "insensitive",
+                      equals: opportunity.title,
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        });
+
+        // Also check against other opportunities in the current batch
+        const duplicateInBatch = uniqueOpportunities.find(
+          (existing) =>
+            existing.title.toLowerCase() === opportunity.title.toLowerCase() ||
+            (existing.title
+              .toLowerCase()
+              .includes(opportunity.title.toLowerCase()) &&
+              existing.description
+                .toLowerCase()
+                .includes(
+                  opportunity.description.substring(0, 100).toLowerCase()
+                ))
+        );
+
+        // Only add if no duplicate found in database or current batch
+        if (!existingOpportunity && !duplicateInBatch) {
+          uniqueOpportunities.push(opportunity);
+        }
+      }
+
+      console.log(
+        `Filtered ${
+          opportunities.length - uniqueOpportunities.length
+        } duplicate opportunities`
+      );
+      return uniqueOpportunities;
+    } catch (error) {
+      console.error("Error filtering duplicate opportunities:", error);
+      // Return original opportunities if filtering fails
+      return opportunities;
+    }
+  }
   async findOpportunitiesWithPagination(
     filters: OpportunityFilters,
     pagination: PaginationOptions
@@ -608,7 +686,7 @@ export class OpportunityRepository {
     title: string;
     type: string;
     description: string;
-    fullDescription: string;
+    fullDescription?: string;
     deadline: Date;
     location: string;
     amount?: string;
@@ -650,6 +728,120 @@ export class OpportunityRepository {
       });
     } catch (error) {
       console.error("Error in createOpportunity:", error);
+      throw error;
+    }
+  }
+
+  async bulkCreateOpportunities(
+    opportunitiesData: ParsedOpportunity[]
+  ): Promise<{
+    created: number;
+    failed: number;
+    errors: string[];
+  }> {
+    try {
+      if (!opportunitiesData || opportunitiesData.length === 0) {
+        return { created: 0, failed: 0, errors: [] };
+      }
+
+      let created = 0;
+      let failed = 0;
+      const errors: string[] = [];
+
+      // Process opportunities in batches to avoid overwhelming the database
+      const batchSize = 10;
+      for (let i = 0; i < opportunitiesData.length; i += batchSize) {
+        const batch = opportunitiesData.slice(i, i + batchSize);
+
+        const createPromises = batch.map(async (opportunity) => {
+          try {
+            // Validate required fields
+            if (
+              !opportunity.title ||
+              !opportunity.description ||
+              !opportunity.type
+            ) {
+              throw new Error(
+                `Missing required fields for opportunity: ${
+                  opportunity.title || "Unknown"
+                }`
+              );
+            }
+
+            // Parse deadline if it's a string
+            let deadline: Date;
+            if (typeof opportunity.deadline === "string") {
+              deadline = new Date(opportunity.deadline);
+              if (isNaN(deadline.getTime())) {
+                // If deadline is invalid, set it to 30 days from now
+                deadline = new Date();
+                deadline.setDate(deadline.getDate() + 30);
+              }
+            } else {
+              deadline = new Date();
+              deadline.setDate(deadline.getDate() + 30);
+            }
+
+            const createdOpportunity = await prisma.opportunity.create({
+              data: {
+                title: opportunity.title.trim(),
+                type: opportunity.type.toUpperCase() as any,
+                description: opportunity.description.trim(),
+                deadline: deadline,
+                location: opportunity.location || "Remote",
+                amount: opportunity.amount || null,
+                link: opportunity.link || "",
+                category: opportunity.category || "General",
+                status: "DRAFT",
+                detail: {
+                  create: {
+                    fullDescription: opportunity.description,
+                    applicationInstructions: [],
+                    eligibility: [],
+                    benefits: [],
+                    views: 0,
+                    applications: 0,
+                    saves: 0,
+                  },
+                },
+              },
+              include: {
+                detail: true,
+              },
+            });
+
+            created++;
+            return createdOpportunity;
+          } catch (error) {
+            failed++;
+            const errorMessage =
+              error instanceof Error ? error.message : "Unknown error";
+            errors.push(
+              `Failed to create opportunity "${opportunity.title}": ${errorMessage}`
+            );
+            console.error(
+              `Error creating opportunity ${opportunity.title}:`,
+              error
+            );
+            return null;
+          }
+        });
+
+        // Wait for batch to complete
+        await Promise.all(createPromises);
+      }
+
+      console.log(
+        `Bulk create completed: ${created} created, ${failed} failed`
+      );
+
+      return {
+        created,
+        failed,
+        errors,
+      };
+    } catch (error) {
+      console.error("Error in bulkCreateOpportunities:", error);
       throw error;
     }
   }

@@ -61,15 +61,38 @@ export class AIDraftsRepository {
     title: string;
     source: string;
     priority: "high" | "medium" | "low";
+    rawContent?: string;
     extractedData: any;
+    opportunityId?: string;
   }): Promise<AIDraft> {
+    const extracted = draftData.extractedData || {};
     return await prisma.aIDraft.create({
       data: {
         title: draftData.title,
         source: draftData.source,
         status: "PENDING",
         priority: draftData.priority.toUpperCase() as any,
-        extractedData: draftData.extractedData,
+        rawContent: draftData.rawContent,
+        
+        // Store extracted data in individual columns
+        extractedTitle: extracted.title,
+        extractedType: extracted.type,
+        extractedDescription: extracted.description,
+        extractedDeadline: extracted.deadline ? new Date(extracted.deadline) : null,
+        extractedLocation: extracted.location,
+        extractedAmount: extracted.amount,
+        extractedLink: extracted.link,
+        extractedCategory: extracted.category,
+        extractedFullDescription: extracted.fullDescription,
+        extractedApplicationInstructions: extracted.applicationInstructions || [],
+        extractedEligibility: extracted.eligibility || [],
+        extractedBenefits: extracted.benefits || [],
+        
+        // Store additional data in JSON field if needed
+        extractedData: extracted,
+        
+        // Link to opportunity if provided
+        opportunityId: draftData.opportunityId,
       },
     });
   }
@@ -106,7 +129,7 @@ export class AIDraftsRepository {
           title: opportunityData.title,
           type: opportunityData.type.toUpperCase() as any,
           description: opportunityData.description,
-          deadline: new Date(opportunityData.deadline),
+          deadline: opportunityData.deadline ? new Date(opportunityData.deadline) : new Date(),
           location: opportunityData.location,
           amount: opportunityData.amount,
           link: opportunityData.link,
@@ -132,12 +155,13 @@ export class AIDraftsRepository {
         },
       });
 
-      // Update the draft status
+      // Update the draft status and link to opportunity
       const draft = await prisma.aIDraft.update({
         where: { id: draftId },
         data: {
           status: "APPROVED",
           reviewedAt: new Date(),
+          opportunityId: opportunity.id,
         },
       });
 
@@ -213,9 +237,42 @@ export class AIDraftsRepository {
     return await prisma.aIDraft.update({
       where: { id },
       data: {
+        // Update individual columns
+        extractedTitle: extractedData.title,
+        extractedType: extractedData.type,
+        extractedDescription: extractedData.description,
+        extractedDeadline: extractedData.deadline ? new Date(extractedData.deadline) : null,
+        extractedLocation: extractedData.location,
+        extractedAmount: extractedData.amount,
+        extractedLink: extractedData.link,
+        extractedCategory: extractedData.category,
+        extractedFullDescription: extractedData.fullDescription,
+        extractedApplicationInstructions: extractedData.applicationInstructions || [],
+        extractedEligibility: extractedData.eligibility || [],
+        extractedBenefits: extractedData.benefits || [],
+        
+        // Also update JSON field
         extractedData,
         updatedAt: new Date(),
       },
     });
+  }
+
+  async updateDraftPriority(id: string, priority: string): Promise<AIDraft> {
+    return await prisma.aIDraft.update({
+      where: { id },
+      data: {
+        priority: priority as any,
+        updatedAt: new Date(),
+      },
+    });
+  }
+
+  async bulkDeleteDrafts(ids: string[]): Promise<number> {
+    const result = await prisma.aIDraft.deleteMany({
+      where: { id: { in: ids } },
+    });
+
+    return result.count;
   }
 }
