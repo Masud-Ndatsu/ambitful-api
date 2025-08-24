@@ -52,7 +52,7 @@ export class AdminOpportunityService {
     title: string;
     type: string;
     description: string;
-    fullDescription: string;
+    fullDescription?: string;
     deadline: string;
     location: string;
     amount?: string;

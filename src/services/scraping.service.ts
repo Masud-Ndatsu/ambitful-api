@@ -1,6 +1,9 @@
 import { GeminiService } from "./gemini.service";
 import { AIDraftsRepository } from "../repositories/ai-drafts.repository";
 import { CustomError } from "../middleware/errorHandler";
+import axios, { AxiosResponse } from "axios";
+import * as cheerio from "cheerio";
+import { ParsedOpportunity } from "../types";
 
 export interface ScrapingResult {
   title: string;
@@ -31,73 +34,13 @@ export class ScrapingService {
     this.draftsRepository = new AIDraftsRepository();
   }
 
-  async scanOpportunities(
-    urls?: string[],
-    keywords?: string[]
-  ): Promise<{ message: string; draftsFound: number }> {
+  async scrapeUrl(url: string): Promise<ScrapingResult[]> {
     try {
-      let results: ScrapingResult[] = [];
-
-      if (urls && urls.length > 0) {
-        // Scan provided URLs
-        for (const url of urls) {
-          const urlResults = await this.scrapeUrl(url);
-          results.push(...urlResults);
-        }
-      }
-
-      if (keywords && keywords.length > 0) {
-        // Search for opportunities based on keywords
-        const keywordResults = await this.searchByKeywords(keywords);
-        results.push(...keywordResults);
-      }
-
-      // If no URLs or keywords provided, use default sources
-      if (
-        (!urls || urls.length === 0) &&
-        (!keywords || keywords.length === 0)
-      ) {
-        results = await this.scanDefaultSources();
-      }
-
-      // Save results as drafts
-      let draftsCreated = 0;
-      for (const result of results) {
-        try {
-          await this.draftsRepository.createDraft({
-            title: result.title,
-            source: result.source,
-            priority: result.priority,
-            extractedData: result.extractedData,
-          });
-          draftsCreated++;
-        } catch (error) {
-          // Skip duplicates or errors
-          console.error(`Failed to create draft for ${result.title}:`, error);
-        }
-      }
-
-      return {
-        message: `Successfully scanned and found ${draftsCreated} new opportunity drafts`,
-        draftsFound: draftsCreated,
-      };
-    } catch (error) {
-      console.error("Scraping service error:", error);
-      throw new CustomError("Failed to scan opportunities", 500);
-    }
-  }
-
-  private async scrapeUrl(url: string): Promise<ScrapingResult[]> {
-    try {
-      // In a real implementation, you would use a web scraping library like Puppeteer
-      // For now, we'll simulate the process with mock data
-      const mockHtmlContent = await this.fetchUrlContent(url);
+      // Fetch real HTML content from the URL
+      const htmlContent = await this.fetchPageContent(url);
 
       // Use Gemini to extract opportunity data from HTML content
-      const extractedData = await this.extractOpportunityData(
-        mockHtmlContent,
-        url
-      );
+      const extractedData = await this.extractOpportunityData(htmlContent, url);
 
       if (extractedData) {
         return [
@@ -117,22 +60,89 @@ export class ScrapingService {
     }
   }
 
-  private async fetchUrlContent(url: string): Promise<string> {
-    // Mock implementation - in real app, use fetch or similar
-    // This would typically use libraries like puppeteer, cheerio, or axios
-    return `
-      <html>
-        <head><title>Sample Scholarship Opportunity</title></head>
-        <body>
-          <h1>Global Excellence Scholarship 2024</h1>
-          <p>Description: A prestigious international scholarship for outstanding students...</p>
-          <p>Deadline: 2024-12-15</p>
-          <p>Amount: $25,000</p>
-          <p>Location: Worldwide</p>
-          <p>Eligibility: Undergraduate and graduate students with GPA 3.5+</p>
-        </body>
-      </html>
-    `;
+  async fetchPageContent(url: string): Promise<string> {
+    try {
+      // Validate URL
+      if (!url || typeof url !== "string") {
+        throw new Error("Invalid URL provided");
+      }
+
+      // Set up axios configuration with appropriate headers
+      const response: AxiosResponse<string> = await axios.get(url, {
+        timeout: 30000, // 30 second timeout
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+          Accept:
+            "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.5",
+          "Accept-Encoding": "gzip, deflate",
+          Connection: "keep-alive",
+          "Upgrade-Insecure-Requests": "1",
+        },
+        maxRedirects: 5,
+        validateStatus: (status) => status < 400, // Accept any status code less than 400
+      });
+
+      // Check if we received HTML content
+      const contentType = response.headers["content-type"] || "";
+      if (!contentType.includes("text/html")) {
+        throw new Error(
+          `URL does not return HTML content. Content-Type: ${contentType}`
+        );
+      }
+
+      // Load HTML with cheerio for parsing and cleaning
+      const $ = cheerio.load(response.data);
+
+      // Remove script and style elements to clean up the HTML
+      $("script, style, noscript").remove();
+
+      // Get the cleaned HTML
+      const cleanedHtml = $.html();
+
+      if (!cleanedHtml || cleanedHtml.trim().length === 0) {
+        throw new Error("No HTML content found after parsing");
+      }
+
+      console.log(`Successfully fetched and parsed content from ${url}`);
+      return cleanedHtml;
+    } catch (error) {
+      console.error(`Failed to fetch page content from ${url}:`, error);
+
+      if (axios.isAxiosError(error)) {
+        if (error.code === "ECONNABORTED") {
+          throw new CustomError(`Request timeout while fetching ${url}`);
+        } else if (error.response) {
+          throw new CustomError(
+            `HTTP ${error.response.status}: ${error.response.statusText} for ${url}`
+          );
+        } else if (error.request) {
+          throw new CustomError(`Network error while fetching ${url}`);
+        }
+      }
+
+      throw new CustomError(
+        `Failed to fetch page content: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  }
+
+  async parseContentForOpportunities(
+    content: string
+  ): Promise<ParsedOpportunity[]> {
+    try {
+      // Use Gemini to parse the HTML content for opportunities
+      const opportunities = await this.geminiService.parseBlockToOpportunities(
+        content
+      );
+      return opportunities || [];
+    } catch (error) {
+      console.error("Error parsing content for opportunities:", error);
+      return [];
+    }
   }
 
   private async extractOpportunityData(
@@ -202,82 +212,23 @@ export class ScrapingService {
     }
   }
 
-  private async searchByKeywords(
-    keywords: string[]
-  ): Promise<ScrapingResult[]> {
-    // Mock implementation for keyword-based search
-    // In real app, this would search through various scholarship/opportunity websites
-    const mockResults: ScrapingResult[] = [];
-
-    for (const keyword of keywords) {
-      // Simulate finding opportunities based on keywords
-      const mockOpportunity: ScrapingResult = {
-        title: `${keyword} Research Fellowship 2024`,
-        source: `https://example.com/opportunities/${keyword.toLowerCase()}`,
-        extractedData: {
-          title: `${keyword} Research Fellowship 2024`,
-          type: "fellowship",
-          description: `Exciting ${keyword} fellowship opportunity for researchers`,
-          location: "Various locations",
-          link: `https://example.com/opportunities/${keyword.toLowerCase()}`,
-          category: keyword,
-          deadline: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
-            .toISOString()
-            .split("T")[0], // 90 days from now
-          amount: "$15,000",
-          eligibility: ["Graduate students", "Recent PhD graduates"],
-          benefits: [
-            "Research funding",
-            "Mentorship",
-            "Networking opportunities",
-          ],
-        },
-        priority: "medium",
-      };
-
-      mockResults.push(mockOpportunity);
-    }
-
-    return mockResults;
-  }
-
-  private async scanDefaultSources(): Promise<ScrapingResult[]> {
-    // Mock default sources scanning
-    // In real implementation, these would be popular scholarship/opportunity websites
-    const defaultSources = [
-      "https://example.com/scholarships",
-      "https://example.com/internships",
-      "https://example.com/fellowships",
-    ];
-
-    const results: ScrapingResult[] = [];
-
-    for (const source of defaultSources) {
-      const sourceResults = await this.scrapeUrl(source);
-      results.push(...sourceResults);
-    }
-
-    return results;
-  }
-
   private determinePriority(
     extractedData: ScrapingResult["extractedData"]
   ): "high" | "medium" | "low" {
-    // Priority logic based on opportunity characteristics
+    // Simple priority logic based on extracted data
     let score = 0;
 
-    // Amount-based scoring
+    // Check for amount/value
     if (extractedData.amount) {
-      const amountMatch = extractedData.amount.match(/\$?(\d+(?:,\d+)*)/);
-      if (amountMatch) {
-        const amount = parseInt(amountMatch[1].replace(/,/g, ""));
-        if (amount >= 20000) score += 3;
-        else if (amount >= 10000) score += 2;
-        else if (amount >= 5000) score += 1;
+      const amount = extractedData.amount.toLowerCase();
+      if (amount.includes("$") || amount.includes("full")) {
+        score += 2;
+      } else {
+        score += 1;
       }
     }
 
-    // Deadline urgency
+    // Check for deadline urgency
     if (extractedData.deadline) {
       const deadlineDate = new Date(extractedData.deadline);
       const now = new Date();
@@ -285,44 +236,29 @@ export class ScrapingService {
         (deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
       );
 
-      if (daysUntilDeadline <= 30) score += 2;
-      else if (daysUntilDeadline <= 60) score += 1;
+      if (daysUntilDeadline <= 7) {
+        score += 3;
+      } else if (daysUntilDeadline <= 30) {
+        score += 2;
+      } else {
+        score += 1;
+      }
     }
 
-    // Type-based scoring
-    if (
-      extractedData.type === "fellowship" ||
-      extractedData.type === "scholarship"
-    ) {
+    // Check opportunity type
+    if (extractedData.type === "fellowship" || extractedData.type === "grant") {
+      score += 2;
+    } else if (extractedData.type === "scholarship") {
       score += 1;
     }
 
-    // Determine final priority
-    if (score >= 4) return "high";
-    if (score >= 2) return "medium";
-    return "low";
-  }
-
-  async testConnection(): Promise<boolean> {
-    try {
-      // Test if the scraping service is working
-      await this.fetchUrlContent("https://example.com");
-      return true;
-    } catch (error) {
-      return false;
+    // Determine priority based on score
+    if (score >= 5) {
+      return "high";
+    } else if (score >= 3) {
+      return "medium";
+    } else {
+      return "low";
     }
-  }
-
-  async getScrapingStats(): Promise<{
-    totalScanned: number;
-    successRate: number;
-    lastScanDate: Date;
-  }> {
-    // Mock implementation - in real app, track these metrics
-    return {
-      totalScanned: 0,
-      successRate: 0.85,
-      lastScanDate: new Date(),
-    };
   }
 }

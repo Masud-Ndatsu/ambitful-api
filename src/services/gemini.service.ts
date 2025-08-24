@@ -1,7 +1,8 @@
 import { GoogleGenAI } from "@google/genai";
-import { Opportunity } from "../types";
+import { Opportunity, ParsedOpportunity } from "../types";
 import { OpportunityRepository } from "../repositories/opportunity.repository";
 import { CustomError } from "../middleware/errorHandler";
+import { DEFAULT_CATEGORIES } from "../enums";
 
 export interface ChatContext {
   userProfile: {
@@ -36,6 +37,101 @@ export class GeminiService {
 
     this.genAI = new GoogleGenAI({ apiKey });
     this.opportunityRepository = new OpportunityRepository();
+  }
+
+  async parseBlockToOpportunities(
+    blockHtml: string
+  ): Promise<ParsedOpportunity[]> {
+    // Note: Categories list would typically come from a categories service
+    // For now, using common categories
+    const categoriesList = DEFAULT_CATEGORIES.join(", ");
+
+    const prompt = `
+From the following HTML block, extract all distinct opportunities.
+For each opportunity, return a JSON object with the following fields:
+
+"title": A concise, descriptive name of the opportunity. (REQUIRED)
+"description": A brief summary of the opportunity, typically the first 2-3 sentences. (REQUIRED)
+"type": The type of opportunity. Must be one of: "SCHOLARSHIP", "INTERNSHIP", "FELLOWSHIP", "GRANT". (REQUIRED)
+"deadline": The application deadline in YYYY-MM-DD format. If no deadline is found or deadline has passed, use a date far in the future (e.g., "2099-12-31").
+"link": The full, absolute URL to apply or learn more about the opportunity. (REQUIRED)
+"location": The primary work/study location (e.g., "New York, NY", "Remote", "Multiple Cities"). If not found, use "Not Specified".
+"amount": The monetary value, stipend, or scholarship amount (e.g., "$5,000", "Full tuition", "€10,000"). If not found, provide null.
+"category": From the categories list below, select the name (not ID) that best matches the opportunity. If no clear match, use "General Opportunities".
+
+Available Categories:
+${categoriesList}
+
+Return ONLY an array of these JSON objects. Do NOT include any introductory or concluding text, explanations, or code fences. If no opportunities are found, return an empty array: [].
+
+HTML Block:
+${blockHtml}
+`;
+
+    try {
+      console.log("Sending HTML block to Gemini for parsing...");
+
+      const result = await this.genAI.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "ARRAY",
+            items: {
+              type: "OBJECT",
+              properties: {
+                title: { type: "STRING" },
+                description: { type: "STRING" },
+                type: {
+                  type: "STRING",
+                  enum: ["SCHOLARSHIP", "INTERNSHIP", "FELLOWSHIP", "GRANT"],
+                },
+                deadline: { type: "STRING" },
+                link: { type: "STRING" },
+                location: { type: "STRING" },
+                amount: {
+                  oneOf: [{ type: "STRING" }, { type: "NULL" }],
+                },
+                category: { type: "STRING" },
+              },
+              required: [
+                "title",
+                "description",
+                "type",
+                "deadline",
+                "link",
+                "location",
+                "category",
+              ],
+            },
+          },
+        },
+      });
+
+      const responseText = result.text || "";
+
+      if (!responseText) {
+        console.warn("Gemini returned no content for parsing.");
+        return [];
+      }
+
+      const cleanedAIResponse = this.cleanAIResponse(responseText);
+      const parsed = JSON.parse(cleanedAIResponse);
+
+      console.log({ parsed });
+
+      if (!Array.isArray(parsed)) {
+        console.warn("Gemini response was not an array.");
+        return [];
+      }
+
+      console.log(`Gemini successfully parsed ${parsed.length} opportunities.`);
+      return parsed;
+    } catch (err: any) {
+      console.error("Gemini parse error", err.message);
+      return [];
+    }
   }
 
   async generateResponse(
