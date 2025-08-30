@@ -7,6 +7,7 @@ import { OpportunityRepository } from "../repositories/opportunity.repository";
 import { ScrapingService } from "./scraping.service";
 import { AIDraft, Opportunity } from "../types";
 import { CustomError } from "../middleware/errorHandler";
+import { DraftStatus, OpportunityType, OpportunityStatus } from "../enums";
 
 export class AIDraftsService {
   private draftsRepository: AIDraftsRepository;
@@ -27,6 +28,7 @@ export class AIDraftsService {
     total: number;
     pending: number;
     page: number;
+    limit: number;
     totalPages: number;
   }> {
     try {
@@ -90,6 +92,7 @@ export class AIDraftsService {
         total: result.total,
         pending: result.pending,
         page: pagination.page,
+        limit: pagination.limit,
         totalPages: Math.ceil(result.total / pagination.limit),
       };
     } catch (error) {
@@ -137,6 +140,33 @@ export class AIDraftsService {
     draft: any,
     feedback?: string
   ): Promise<{ message: string; opportunity: Opportunity }> {
+    // Validate required fields before approval
+    const requiredFields = {
+      fullDescription: draft.extractedFullDescription,
+      applicationInstructions: draft.extractedApplicationInstructions,
+      eligibility: draft.extractedEligibility,
+      benefits: draft.extractedBenefits,
+    };
+
+    const missingFields: string[] = [];
+    for (const [fieldName, fieldValue] of Object.entries(requiredFields)) {
+      if (
+        !fieldValue ||
+        (Array.isArray(fieldValue) && fieldValue.length === 0)
+      ) {
+        missingFields.push(fieldName);
+      }
+    }
+
+    if (missingFields.length > 0) {
+      throw new CustomError(
+        `Cannot approve draft. Missing required fields: ${missingFields.join(
+          ", "
+        )}. Please regenerate the draft or add the missing information manually.`,
+        400
+      );
+    }
+
     // Create opportunity from draft data using individual extracted fields
     const opportunityData = {
       title: draft.extractedTitle || draft.title,
@@ -193,7 +223,7 @@ export class AIDraftsService {
   ): Promise<{ message: string }> {
     await this.draftsRepository.updateDraftStatus(
       draft.id,
-      "rejected",
+      DraftStatus.REJECTED,
       feedback
     );
 
@@ -480,7 +510,7 @@ export class AIDraftsService {
     }
 
     // Validate type is one of allowed values
-    const allowedTypes = ["scholarship", "internship", "fellowship", "grant"];
+    const allowedTypes = Object.values(OpportunityType);
     if (!allowedTypes.includes(extractedData.type?.toLowerCase())) {
       return false;
     }
@@ -506,23 +536,37 @@ export class AIDraftsService {
         throw new CustomError("Draft not found", 404);
       }
 
-      // Re-process the raw content with AI
-      const reprocessedData =
-        await this.scrapingService.parseContentForOpportunities(
-          draft.rawContent
-        );
+      const htmlContent = await this.scrapingService.fetchPageContent(
+        draft.extractedLink
+      );
 
-      if (!reprocessedData || reprocessedData.length === 0) {
+      if (!htmlContent) {
+        throw new CustomError("Failed to fetch content from source URL", 400);
+      }
+
+      // Re-process the raw content with AI
+      const extractedData =
+        await this.scrapingService.extractOpportunityDetails(htmlContent);
+
+      if (!extractedData) {
         throw new CustomError("Failed to re-extract data from content", 400);
       }
 
+      console.log({ extractedData });
+
       // Use the first extracted opportunity
-      const extractedData = reprocessedData[0];
 
       // Update the draft with new extracted data
       const updatedDraft = await this.draftsRepository.updateDraftData(
         draftId,
-        extractedData
+        {
+          extractedEligibility: extractedData.eligibility || [],
+          extractedBenefits: extractedData.benefits || [],
+          extractedApplicationInstructions:
+            extractedData.applicationInstructions || [],
+          extractedFullDescription: extractedData.fullDescription || null,
+          extractedLink: extractedData.applicationLink || draft.extractedLink,
+        }
       );
 
       // Format response
@@ -593,7 +637,7 @@ export class AIDraftsService {
 
       await this.draftsRepository.updateDraftPriority(
         draftId,
-        priority.toUpperCase()
+        priority
       );
 
       return {
