@@ -14,13 +14,13 @@ model User {
   email          String     @unique
   password       String
   country        String
-  status         UserStatus @default(ACTIVE)
+  status         String @default("active")
   verified       Boolean    @default(false)
   signupDate     DateTime   @default(now())
   lastActive     DateTime   @default(now())
   interests      String[]
   profilePicture String?
-  role           UserRole   @default(USER)
+  role           String   @default("user")
 
   conversations      ChatConversation[]
   tokens             Token[]
@@ -37,14 +37,15 @@ model User {
 model Opportunity {
   id          String            @id @default(cuid())
   title       String
-  type        OpportunityType
+  type        String
   description String
   deadline    DateTime
   location    String
   amount      String?
   link        String
   category    String
-  status      OpportunityStatus @default(DRAFT)
+  status      String @default("draft")
+  isGenerated Boolean   @default(false)
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 
@@ -76,8 +77,8 @@ model AIDraft {
   id       String        @id @default(cuid())
   title    String
   source   String
-  status   DraftStatus   @default(PENDING)
-  priority DraftPriority @default(MEDIUM)
+  status   String   @default("pending")
+  priority String @default("medium")
 
   // Raw scraped content
   rawContent String? @db.Text
@@ -85,7 +86,7 @@ model AIDraft {
 
   // Extracted opportunity fields (direct columns for better querying)
   extractedTitle       String?
-  extractedType        OpportunityType?
+  extractedType        String?
   extractedDescription String? @db.Text
   extractedDeadline    DateTime?
   extractedLocation    String?
@@ -138,7 +139,7 @@ model ChatMessage {
   id             String        @id @default(cuid())
   conversationId String
   content        String
-  sender         MessageSender
+  sender         String
   timestamp      DateTime      @default(now())
   metadata       Json?
 
@@ -150,7 +151,7 @@ model ChatMessage {
 model Token {
   id        String    @id @default(cuid())
   token     String    @unique
-  type      TokenType
+  type      String
   userId    String
   expiresAt DateTime
   createdAt DateTime  @default(now())
@@ -179,7 +180,7 @@ model Application {
   id              String            @id @default(cuid())
   userId          String
   opportunityId   String
-  status          ApplicationStatus @default(PENDING)
+  status          String @default("pending")
   applicationData Json?
   submittedAt     DateTime          @default(now())
 
@@ -221,8 +222,8 @@ model CrawlSource {
   id           String            @id @default(cuid())
   name         String
   url          String
-  status       CrawlSourceStatus @default(ACTIVE)
-  frequency    CrawlFrequency    @default(DAILY)
+  status       String @default("active")
+  frequency    String    @default("daily")
   maxResults   Int               @default(50)
   lastCrawl    DateTime?
   lastSuccess  Boolean           @default(false)
@@ -239,7 +240,7 @@ model CrawlLog {
   id           String      @id @default(cuid())
   sourceId     String
   source       CrawlSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
-  status       CrawlStatus
+  status       String
   itemsFound   Int         @default(0)
   errorMessage String?
   startedAt    DateTime    @default(now())
@@ -249,95 +250,3 @@ model CrawlLog {
   @@map("crawl_logs")
 }
 
-// Enums
-enum UserStatus {
-  ACTIVE
-  INACTIVE
-  SUSPENDED
-
-  @@map("user_status")
-}
-
-enum UserRole {
-  USER
-  ADMIN
-
-  @@map("user_role")
-}
-
-enum OpportunityType {
-  SCHOLARSHIP
-  INTERNSHIP
-  FELLOWSHIP
-  GRANT
-
-  @@map("opportunity_type")
-}
-
-enum OpportunityStatus {
-  PUBLISHED
-  DRAFT
-  ARCHIVED
-
-  @@map("opportunity_status")
-}
-
-enum DraftStatus {
-  PENDING
-  APPROVED
-  REJECTED
-
-  @@map("draft_status")
-}
-
-enum DraftPriority {
-  HIGH
-  MEDIUM
-  LOW
-
-  @@map("draft_priority")
-}
-
-enum MessageSender {
-  USER
-  BOT
-
-  @@map("message_sender")
-}
-
-enum TokenType {
-  EMAIL_VERIFICATION
-  PASSWORD_RESET
-
-  @@map("token_type")
-}
-
-enum ApplicationStatus {
-  PENDING
-  SUBMITTED
-  REVIEWED
-  ACCEPTED
-  REJECTED
-
-  @@map("application_status")
-}
-
-enum CrawlSourceStatus {
-  ACTIVE
-  PAUSED
-  DISABLED
-}
-
-enum CrawlFrequency {
-  HOURLY
-  DAILY
-  WEEKLY
-  MONTHLY
-}
-
-enum CrawlStatus {
-  PENDING
-  RUNNING
-  SUCCESS
-  FAILED
-}

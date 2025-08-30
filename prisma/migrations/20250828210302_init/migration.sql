@@ -1,30 +1,3 @@
--- CreateEnum
-CREATE TYPE "user_status" AS ENUM ('ACTIVE', 'INACTIVE', 'SUSPENDED');
-
--- CreateEnum
-CREATE TYPE "user_role" AS ENUM ('USER', 'ADMIN');
-
--- CreateEnum
-CREATE TYPE "opportunity_type" AS ENUM ('SCHOLARSHIP', 'INTERNSHIP', 'FELLOWSHIP', 'GRANT');
-
--- CreateEnum
-CREATE TYPE "opportunity_status" AS ENUM ('PUBLISHED', 'DRAFT', 'ARCHIVED');
-
--- CreateEnum
-CREATE TYPE "draft_status" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
-
--- CreateEnum
-CREATE TYPE "draft_priority" AS ENUM ('HIGH', 'MEDIUM', 'LOW');
-
--- CreateEnum
-CREATE TYPE "message_sender" AS ENUM ('USER', 'BOT');
-
--- CreateEnum
-CREATE TYPE "token_type" AS ENUM ('EMAIL_VERIFICATION', 'PASSWORD_RESET');
-
--- CreateEnum
-CREATE TYPE "application_status" AS ENUM ('PENDING', 'SUBMITTED', 'REVIEWED', 'ACCEPTED', 'REJECTED');
-
 -- CreateTable
 CREATE TABLE "users" (
     "id" TEXT NOT NULL,
@@ -32,13 +5,13 @@ CREATE TABLE "users" (
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
     "country" TEXT NOT NULL,
-    "status" "user_status" NOT NULL DEFAULT 'ACTIVE',
+    "status" TEXT NOT NULL DEFAULT 'active',
     "verified" BOOLEAN NOT NULL DEFAULT false,
     "signupDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "lastActive" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "interests" TEXT[],
     "profilePicture" TEXT,
-    "role" "user_role" NOT NULL DEFAULT 'USER',
+    "role" TEXT NOT NULL DEFAULT 'user',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -49,14 +22,15 @@ CREATE TABLE "users" (
 CREATE TABLE "opportunities" (
     "id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
-    "type" "opportunity_type" NOT NULL,
+    "type" TEXT NOT NULL,
     "description" TEXT NOT NULL,
     "deadline" TIMESTAMP(3) NOT NULL,
     "location" TEXT NOT NULL,
     "amount" TEXT,
     "link" TEXT NOT NULL,
     "category" TEXT NOT NULL,
-    "status" "opportunity_status" NOT NULL DEFAULT 'DRAFT',
+    "status" TEXT NOT NULL DEFAULT 'draft',
+    "isGenerated" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -68,7 +42,7 @@ CREATE TABLE "opportunity_details" (
     "id" TEXT NOT NULL,
     "opportunityId" TEXT NOT NULL,
     "fullDescription" TEXT NOT NULL,
-    "applicationInstructions" TEXT NOT NULL,
+    "applicationInstructions" TEXT[],
     "eligibility" TEXT[],
     "benefits" TEXT[],
     "views" INTEGER NOT NULL DEFAULT 0,
@@ -83,11 +57,27 @@ CREATE TABLE "ai_drafts" (
     "id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "source" TEXT NOT NULL,
-    "status" "draft_status" NOT NULL DEFAULT 'PENDING',
-    "priority" "draft_priority" NOT NULL DEFAULT 'MEDIUM',
+    "status" TEXT NOT NULL DEFAULT 'pending',
+    "priority" TEXT NOT NULL DEFAULT 'medium',
+    "rawContent" TEXT,
+    "dateScraped" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "extractedTitle" TEXT,
+    "extractedType" TEXT,
+    "extractedDescription" TEXT,
+    "extractedDeadline" TIMESTAMP(3),
+    "extractedLocation" TEXT,
+    "extractedAmount" TEXT,
+    "extractedLink" TEXT,
+    "extractedCategory" TEXT,
+    "extractedFullDescription" TEXT,
+    "extractedApplicationInstructions" TEXT[],
+    "extractedEligibility" TEXT[],
+    "extractedBenefits" TEXT[],
+    "extractedData" JSONB,
     "feedback" TEXT,
     "reviewedAt" TIMESTAMP(3),
-    "extractedData" JSONB NOT NULL,
+    "reviewedBy" TEXT,
+    "opportunityId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -109,7 +99,7 @@ CREATE TABLE "chat_messages" (
     "id" TEXT NOT NULL,
     "conversationId" TEXT NOT NULL,
     "content" TEXT NOT NULL,
-    "sender" "message_sender" NOT NULL,
+    "sender" TEXT NOT NULL,
     "timestamp" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "metadata" JSONB,
 
@@ -120,7 +110,7 @@ CREATE TABLE "chat_messages" (
 CREATE TABLE "tokens" (
     "id" TEXT NOT NULL,
     "token" TEXT NOT NULL,
-    "type" "token_type" NOT NULL,
+    "type" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "expiresAt" TIMESTAMP(3) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -147,7 +137,7 @@ CREATE TABLE "applications" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "opportunityId" TEXT NOT NULL,
-    "status" "application_status" NOT NULL DEFAULT 'PENDING',
+    "status" TEXT NOT NULL DEFAULT 'pending',
     "applicationData" JSONB,
     "submittedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -179,11 +169,57 @@ CREATE TABLE "testimonials" (
     CONSTRAINT "testimonials_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "crawl_sources" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "url" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'active',
+    "frequency" TEXT NOT NULL DEFAULT 'daily',
+    "maxResults" INTEGER NOT NULL DEFAULT 50,
+    "lastCrawl" TIMESTAMP(3),
+    "lastSuccess" BOOLEAN NOT NULL DEFAULT false,
+    "errorMessage" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "crawl_sources_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "crawl_logs" (
+    "id" TEXT NOT NULL,
+    "sourceId" TEXT NOT NULL,
+    "status" TEXT NOT NULL,
+    "itemsFound" INTEGER NOT NULL DEFAULT 0,
+    "errorMessage" TEXT,
+    "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "completedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "crawl_logs_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "opportunity_details_opportunityId_key" ON "opportunity_details"("opportunityId");
+
+-- CreateIndex
+CREATE INDEX "ai_drafts_status_idx" ON "ai_drafts"("status");
+
+-- CreateIndex
+CREATE INDEX "ai_drafts_priority_idx" ON "ai_drafts"("priority");
+
+-- CreateIndex
+CREATE INDEX "ai_drafts_extractedType_idx" ON "ai_drafts"("extractedType");
+
+-- CreateIndex
+CREATE INDEX "ai_drafts_extractedDeadline_idx" ON "ai_drafts"("extractedDeadline");
+
+-- CreateIndex
+CREATE INDEX "ai_drafts_dateScraped_idx" ON "ai_drafts"("dateScraped");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "tokens_token_key" ON "tokens"("token");
@@ -196,6 +232,9 @@ CREATE UNIQUE INDEX "saved_opportunities_userId_opportunityId_key" ON "saved_opp
 
 -- AddForeignKey
 ALTER TABLE "opportunity_details" ADD CONSTRAINT "opportunity_details_opportunityId_fkey" FOREIGN KEY ("opportunityId") REFERENCES "opportunities"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ai_drafts" ADD CONSTRAINT "ai_drafts_opportunityId_fkey" FOREIGN KEY ("opportunityId") REFERENCES "opportunities"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "chat_conversations" ADD CONSTRAINT "chat_conversations_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -220,3 +259,6 @@ ALTER TABLE "saved_opportunities" ADD CONSTRAINT "saved_opportunities_userId_fke
 
 -- AddForeignKey
 ALTER TABLE "saved_opportunities" ADD CONSTRAINT "saved_opportunities_opportunityId_fkey" FOREIGN KEY ("opportunityId") REFERENCES "opportunities"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "crawl_logs" ADD CONSTRAINT "crawl_logs_sourceId_fkey" FOREIGN KEY ("sourceId") REFERENCES "crawl_sources"("id") ON DELETE CASCADE ON UPDATE CASCADE;
