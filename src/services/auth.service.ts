@@ -4,7 +4,7 @@ import { generateToken, generateRandomToken, JWTPayload } from "../utils/jwt";
 import { sendVerificationEmail, sendPasswordResetEmail } from "../utils/email";
 import { User } from "../types";
 import { CustomError } from "../middleware/errorHandler";
-import { UserRole } from "@prisma/client";
+import { TokenType } from "../enums";
 
 export class AuthService {
   private authRepository: AuthRepository;
@@ -36,7 +36,7 @@ export class AuthService {
     const verificationToken = generateRandomToken();
     await this.authRepository.createToken({
       token: verificationToken,
-      type: "EMAIL_VERIFICATION",
+      type: TokenType.EMAIL_VERIFICATION,
       userId: user.id,
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
     });
@@ -126,7 +126,7 @@ export class AuthService {
     const resetToken = generateRandomToken();
     await this.authRepository.createToken({
       token: resetToken,
-      type: "PASSWORD_RESET",
+      type: TokenType.PASSWORD_RESET,
       userId: user.id,
       expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
     });
@@ -146,7 +146,7 @@ export class AuthService {
   ): Promise<{ message: string }> {
     const tokenRecord = await this.authRepository.findTokenByValue(
       token,
-      "PASSWORD_RESET"
+      TokenType.PASSWORD_RESET
     );
     if (!tokenRecord) {
       throw new CustomError("Invalid or expired token", 400);
@@ -167,7 +167,7 @@ export class AuthService {
   ): Promise<{ message: string; verified: boolean }> {
     const tokenRecord = await this.authRepository.findTokenByValue(
       token,
-      "EMAIL_VERIFICATION"
+      TokenType.EMAIL_VERIFICATION
     );
     if (!tokenRecord) {
       return {

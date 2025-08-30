@@ -212,8 +212,8 @@ export class AdminController {
       const { page = 1, limit = 10, status, priority } = req.query as any;
 
       const filters = {
-        status: status as "pending" | "approved" | "rejected" | undefined,
-        priority: priority as "high" | "medium" | "low" | undefined,
+        status: status as string | undefined,
+        priority: priority as string | undefined,
       };
 
       const pagination = {
@@ -539,7 +539,10 @@ export class AdminController {
     ): Promise<void> => {
       const { id } = req.params;
       const { priority } = req.body;
-      const result = await this.aiDraftsService.updateDraftPriority(id, priority);
+      const result = await this.aiDraftsService.updateDraftPriority(
+        id,
+        priority
+      );
       SuccessResponse(res, result, "Draft priority updated successfully");
     }
   );

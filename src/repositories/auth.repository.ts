@@ -1,5 +1,5 @@
 import { prisma } from '../database/prisma';
-import { User, Token, TokenType } from '@prisma/client';
+import { User, Token } from '@prisma/client';
 
 export class AuthRepository {
   async createUser(userData: {
@@ -16,9 +16,9 @@ export class AuthRepository {
         password: userData.password,
         country: userData.country,
         interests: userData.interests,
-        status: 'ACTIVE',
+        status: 'active',
         verified: false,
-        role: 'USER'
+        role: 'user'
       }
     });
   }
@@ -44,7 +44,7 @@ export class AuthRepository {
 
   async createToken(tokenData: {
     token: string;
-    type: TokenType;
+    type: string;
     userId: string;
     expiresAt: Date;
   }): Promise<Token> {
@@ -53,7 +53,7 @@ export class AuthRepository {
     });
   }
 
-  async findTokenByValue(token: string, type: TokenType): Promise<Token | null> {
+  async findTokenByValue(token: string, type: string): Promise<Token | null> {
     return await prisma.token.findFirst({
       where: {
         token,

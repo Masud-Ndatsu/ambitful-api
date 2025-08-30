@@ -2,7 +2,6 @@ import { GoogleGenAI } from "@google/genai";
 import { Opportunity, ParsedOpportunity } from "../types";
 import { OpportunityRepository } from "../repositories/opportunity.repository";
 import { CustomError } from "../middleware/errorHandler";
-import { DEFAULT_CATEGORIES } from "../enums";
 
 export interface ChatContext {
   userProfile: {
@@ -42,9 +41,11 @@ export class GeminiService {
   async parseBlockToOpportunities(
     blockHtml: string
   ): Promise<ParsedOpportunity[]> {
-    // Note: Categories list would typically come from a categories service
-    // For now, using common categories
-    const categoriesList = DEFAULT_CATEGORIES.join(", ");
+    // Get categories dynamically from existing opportunities
+    const filterOptions = await this.opportunityRepository.getFilterOptions();
+    const categoriesList = filterOptions.categories.length > 0 
+      ? filterOptions.categories.join(", ")
+      : "Technology, Healthcare, Business, Education, Research, Arts, Social, General";
 
     const prompt = `
 From the following HTML block, extract all distinct opportunities.
@@ -477,11 +478,7 @@ Make sure each array item is specific and actionable. For benefits, include mone
         };
       } catch (parseError) {
         console.error("Failed to parse AI response:", parseError);
-        // Fallback: extract manually if JSON parsing fails
-        return this.extractOpportunityDataManually(
-          responseText,
-          rawOpportunityText
-        );
+        return null;
       }
     } catch (error) {
       console.error("Error generating improved opportunity data:", error);
@@ -492,24 +489,118 @@ Make sure each array item is specific and actionable. For benefits, include mone
     }
   }
 
-  private extractOpportunityDataManually(
-    _aiResponse: string,
-    originalText: string
-  ): {
-    description: string;
-    benefits: string[];
-    eligibility: string[];
-    howToApply: string[];
-  } {
-    // Fallback manual extraction logic
+  // private extractOpportunityDataManually(
+  //   _aiResponse: string,
+  //   originalText: string
+  // ): {
+  //   description: string;
+  //   benefits: string[];
+  //   eligibility: string[];
+  //   howToApply: string[];
+  // } {
+  //   // Fallback manual extraction logic
 
-    return {
-      description:
-        originalText.split("\n")[0] || "Opportunity details available",
-      benefits: ["Benefits information available in full description"],
-      eligibility: ["Please refer to the full opportunity details"],
-      howToApply: ["Visit the opportunity link for application instructions"],
-    };
+  //   return {
+  //     description:
+  //       originalText.split("\n")[0] || "Opportunity details available",
+  //     benefits: ["Benefits information available in full description"],
+  //     eligibility: ["Please refer to the full opportunity details"],
+  //     howToApply: ["Visit the opportunity link for application instructions"],
+  //   };
+  // }
+
+  async extractOpportunityDetails(htmlContent: string): Promise<{
+    fullDescription: string;
+    applicationInstructions: string[];
+    eligibility: string[];
+    benefits: string[];
+    applicationLink?: string;
+  } | null> {
+    const prompt = `Extract and improve the following opportunity information from HTML content into a structured format. Make the content concise, clear, and actionable:
+
+HTML Content:
+${htmlContent}
+
+Please structure the response as follows:
+1. Full Description: A comprehensive but concise description of what this opportunity is about, combining all relevant details
+2. Application Instructions: Step-by-step application process (be specific and actionable)
+3. Eligibility: Clear eligibility requirements (be specific about age, education, experience, nationality, etc.)
+4. Benefits: List specific benefits/rewards (be concrete, include monetary amounts if mentioned)
+5. Application Link: Direct URL to application page if found in the content
+
+Format your response exactly like this JSON structure:
+{
+  "fullDescription": "Clear, comprehensive description combining all relevant opportunity details",
+  "applicationInstructions": ["Step 1: Specific action", "Step 2: Specific action", "Step 3: Specific action"],
+  "eligibility": ["Specific requirement 1", "Specific requirement 2", "Specific requirement 3"],
+  "benefits": ["Specific benefit 1 with amounts", "Specific benefit 2", "Specific benefit 3"],
+  "applicationLink": "Direct application URL if found"
+}
+
+Make sure each array item is specific and actionable. For benefits, include monetary amounts when available. For eligibility, be specific about requirements. For application instructions, provide clear actionable steps. For the full description, combine all relevant information into a coherent, comprehensive overview.
+
+If you cannot extract valid opportunity information, return null.`;
+
+    try {
+      const result = await this.genAI.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "OBJECT",
+            properties: {
+              fullDescription: { type: "STRING" },
+              applicationInstructions: {
+                type: "ARRAY",
+                items: { type: "STRING" },
+              },
+              eligibility: {
+                type: "ARRAY",
+                items: { type: "STRING" },
+              },
+              benefits: {
+                type: "ARRAY",
+                items: { type: "STRING" },
+              },
+              applicationLink: { type: "STRING" },
+            },
+            required: [
+              "fullDescription",
+              "applicationInstructions",
+              "eligibility",
+              "benefits",
+            ],
+          },
+        },
+      });
+
+      const responseText = result.text || "";
+
+      if (!responseText) {
+        console.warn(
+          "Gemini returned no content for opportunity detail parsing."
+        );
+        return null;
+      }
+
+      const cleanedAIResponse = this.cleanAIResponse(responseText);
+      const parsed = JSON.parse(cleanedAIResponse);
+
+      console.log("Successfully parsed opportunity details:", parsed);
+
+      return {
+        fullDescription:
+          parsed.fullDescription || "No detailed description available",
+        applicationInstructions: parsed.applicationInstructions || [],
+        eligibility: parsed.eligibility || [],
+        benefits: parsed.benefits || [],
+        applicationLink: parsed.applicationLink || undefined,
+      };
+    } catch (error) {
+      console.error("Error parsing opportunity details:", error);
+      return null;
+    }
   }
 
   cleanAIResponse(raw: string): string {

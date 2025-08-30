@@ -74,6 +74,14 @@ router.get(
   adminController.getOpportunities
 );
 
+router.get(
+  "/opportunities/:id",
+  authenticateToken,
+  requireRole(["admin"]),
+  validateQuery(adminOpportunitiesQuerySchema),
+  adminController.getOpportunities
+);
+
 router.post(
   "/opportunities",
   authenticateToken,

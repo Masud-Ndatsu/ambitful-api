@@ -5,6 +5,7 @@ import {
 } from "../repositories/user.repository";
 import { User, UserActivity } from "../types";
 import { CustomError } from "../middleware/errorHandler";
+import { UserRole } from "../enums";
 
 export class UserService {
   private userRepository: UserRepository;
@@ -122,7 +123,7 @@ export class UserService {
     status: "active" | "inactive" | "suspended"
   ): Promise<User> {
     const admin = await this.userRepository.findUserById(adminId);
-    if (!admin || admin.role !== "ADMIN") {
+    if (!admin || admin.role !== UserRole.ADMIN) {
       throw new CustomError("Unauthorized", 403);
     }
 
@@ -131,10 +132,7 @@ export class UserService {
       throw new CustomError("User not found", 404);
     }
 
-    const statusEnum = status.toUpperCase() as
-      | "ACTIVE"
-      | "INACTIVE"
-      | "SUSPENDED";
+    const statusEnum = status;
     const updatedUser = await this.userRepository.updateUserStatus(
       targetUserId,
       statusEnum
@@ -162,7 +160,7 @@ export class UserService {
     targetUserId: string
   ): Promise<UserActivity[]> {
     const admin = await this.userRepository.findUserById(adminId);
-    if (!admin || admin.role !== "ADMIN") {
+    if (!admin || admin.role !== UserRole.ADMIN) {
       throw new CustomError("Unauthorized", 403);
     }
 

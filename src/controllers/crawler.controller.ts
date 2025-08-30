@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from "express";
 import { CrawlerService } from "../services/crawler.service";
 import { asyncHandler } from "../middleware/errorHandler";
 import { SuccessResponse } from "../utils/response";
-import { CrawlSourceStatus, CrawlFrequency } from "@prisma/client";
 
 export class CrawlerController {
   private crawlerService: CrawlerService;
@@ -16,8 +15,8 @@ export class CrawlerController {
       const { status, frequency, search } = req.query;
 
       const filters: any = {};
-      if (status) filters.status = status as CrawlSourceStatus;
-      if (frequency) filters.frequency = frequency as CrawlFrequency;
+      if (status) filters.status = status as string;
+      if (frequency) filters.frequency = frequency as string;
       if (search) filters.search = search as string;
 
       const sources = await this.crawlerService.getCrawlSources(filters);
@@ -42,8 +41,8 @@ export class CrawlerController {
       const sourceData = {
         name: name?.trim(),
         url: url?.trim(),
-        status: status as CrawlSourceStatus,
-        frequency: frequency as CrawlFrequency,
+        status: status as string,
+        frequency: frequency as string,
         maxResults: maxResults ? parseInt(maxResults) : undefined,
       };
 
@@ -61,9 +60,9 @@ export class CrawlerController {
       const updateData: any = {};
       if (name !== undefined) updateData.name = name.trim();
       if (url !== undefined) updateData.url = url.trim();
-      if (status !== undefined) updateData.status = status as CrawlSourceStatus;
+      if (status !== undefined) updateData.status = status as string;
       if (frequency !== undefined)
-        updateData.frequency = frequency as CrawlFrequency;
+        updateData.frequency = frequency as string;
       if (maxResults !== undefined)
         updateData.maxResults = parseInt(maxResults);
 

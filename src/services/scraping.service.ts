@@ -34,32 +34,6 @@ export class ScrapingService {
     this.draftsRepository = new AIDraftsRepository();
   }
 
-  async scrapeUrl(url: string): Promise<ScrapingResult[]> {
-    try {
-      // Fetch real HTML content from the URL
-      const htmlContent = await this.fetchPageContent(url);
-
-      // Use Gemini to extract opportunity data from HTML content
-      const extractedData = await this.extractOpportunityData(htmlContent, url);
-
-      if (extractedData) {
-        return [
-          {
-            title: extractedData.title,
-            source: url,
-            extractedData,
-            priority: this.determinePriority(extractedData),
-          },
-        ];
-      }
-
-      return [];
-    } catch (error) {
-      console.error(`Error scraping URL ${url}:`, error);
-      return [];
-    }
-  }
-
   async fetchPageContent(url: string): Promise<string> {
     try {
       // Validate URL
@@ -69,7 +43,6 @@ export class ScrapingService {
 
       // Set up axios configuration with appropriate headers
       const response: AxiosResponse<string> = await axios.get(url, {
-        timeout: 30000, // 30 second timeout
         headers: {
           "User-Agent":
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
@@ -145,67 +118,11 @@ export class ScrapingService {
     }
   }
 
-  private async extractOpportunityData(
-    htmlContent: string,
-    sourceUrl: string
-  ): Promise<ScrapingResult["extractedData"] | null> {
+  async extractOpportunityDetails(htmlContent: string) {
     try {
-      const extractionPrompt = `
-        Extract opportunity information from the following HTML content and return it in JSON format:
-
-        HTML Content:
-        ${htmlContent.substring(0, 2000)} // Limit content length
-
-        Please extract and return ONLY a JSON object with these fields (no additional text):
-        {
-          "title": "string",
-          "type": "scholarship|internship|fellowship|grant",
-          "description": "string",
-          "fullDescription": "string (optional)",
-          "deadline": "YYYY-MM-DD format (optional)",
-          "location": "string",
-          "amount": "string (optional)",
-          "link": "${sourceUrl}",
-          "eligibility": ["string array (optional)"],
-          "benefits": ["string array (optional)"],
-          "applicationInstructions": "string (optional)",
-          "category": "string"
-        }
-
-        If you cannot extract valid opportunity information, return null.
-      `;
-
-      const result = await this.geminiService.generateResponse(
-        extractionPrompt,
-        {
-          userProfile: {
-            name: "System",
-            email: "",
-            country: "",
-            interests: [],
-          },
-          recentMessages: [],
-          contextType: "general",
-        }
-      );
-
-      // Parse the response as JSON
-      const cleanedResponse = result.response
-        .replace(/```json|```/g, "")
-        .trim();
-      const extractedData = JSON.parse(cleanedResponse);
-
-      // Validate required fields
-      if (
-        extractedData &&
-        extractedData.title &&
-        extractedData.type &&
-        extractedData.description
-      ) {
-        return extractedData;
-      }
-
-      return null;
+      const parsedOpportunity =
+        await this.geminiService.extractOpportunityDetails(htmlContent);
+      return parsedOpportunity;
     } catch (error) {
       console.error("Error extracting opportunity data:", error);
       return null;

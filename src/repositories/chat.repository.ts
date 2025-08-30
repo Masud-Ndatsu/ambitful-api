@@ -1,5 +1,5 @@
 import { prisma } from "../database/prisma";
-import { ChatConversation, ChatMessage, MessageSender } from "@prisma/client";
+import { ChatConversation, ChatMessage } from "@prisma/client";
 
 export interface PaginationOptions {
   page: number;
@@ -83,7 +83,7 @@ export class ChatRepository {
       data: {
         conversationId,
         content,
-        sender: sender.toUpperCase() as MessageSender,
+        sender: sender.toLowerCase(),
         metadata,
         timestamp: new Date(),
       },

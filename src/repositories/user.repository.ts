@@ -1,5 +1,5 @@
 import { prisma } from "../database/prisma";
-import { User, UserActivity, UserStatus } from "@prisma/client";
+import { User, UserActivity } from "@prisma/client";
 
 export interface UserFilters {
   status?: string;
@@ -58,7 +58,7 @@ export class UserRepository {
     const where: any = {};
 
     if (filters.status) {
-      where.status = filters.status.toUpperCase();
+      where.status = filters.status.toLowerCase();
     }
 
     if (filters.country) {
@@ -118,7 +118,7 @@ export class UserRepository {
     };
   }
 
-  async updateUserStatus(id: string, status: UserStatus): Promise<User> {
+  async updateUserStatus(id: string, status: string): Promise<User> {
     return await prisma.user.update({
       where: { id },
       data: { status },

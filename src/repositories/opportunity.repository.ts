@@ -1,10 +1,6 @@
 import { prisma } from "../database/prisma";
-import {
-  Opportunity,
-  OpportunityDetail,
-  OpportunityType,
-  OpportunityStatus,
-} from "@prisma/client";
+import { Opportunity, OpportunityDetail } from "@prisma/client";
+import { OpportunityStatus } from "../enums";
 import { ParsedOpportunity } from "../types";
 
 export interface OpportunityFilters {
@@ -120,7 +116,7 @@ export class OpportunityRepository {
       const skip = (page - 1) * limit;
 
       const where: any = {
-        status: "PUBLISHED",
+        status: OpportunityStatus.PUBLISHED,
       };
 
       if (filters.search) {
@@ -147,7 +143,7 @@ export class OpportunityRepository {
       }
 
       if (filters.type) {
-        where.type = filters.type.toUpperCase();
+        where.type = filters.type.toLowerCase();
       }
 
       if (filters.location) {
@@ -214,7 +210,7 @@ export class OpportunityRepository {
       return await prisma.opportunity.findUnique({
         where: {
           id,
-          status: "PUBLISHED",
+          status: OpportunityStatus.PUBLISHED,
         },
         include: {
           detail: true,
@@ -233,7 +229,7 @@ export class OpportunityRepository {
       const opportunity = await prisma.opportunity.findUnique({
         where: {
           id,
-          status: "PUBLISHED",
+          status: OpportunityStatus.PUBLISHED,
         },
         include: {
           detail: true,
@@ -259,7 +255,7 @@ export class OpportunityRepository {
     try {
       return await prisma.opportunity.findMany({
         where: {
-          status: "PUBLISHED",
+          status: OpportunityStatus.PUBLISHED,
           deadline: {
             gt: new Date(),
           },
@@ -283,7 +279,7 @@ export class OpportunityRepository {
 
       return await prisma.opportunity.findMany({
         where: {
-          status: "PUBLISHED",
+          status: OpportunityStatus.PUBLISHED,
           createdAt: {
             gte: oneWeekAgo,
           },
@@ -323,7 +319,7 @@ export class OpportunityRepository {
       return await prisma.opportunity.findMany({
         where: {
           id: { not: opportunityId },
-          status: "PUBLISHED",
+          status: OpportunityStatus.PUBLISHED,
           OR: [
             { type: baseOpportunity.type },
             { category: baseOpportunity.category },
@@ -345,7 +341,7 @@ export class OpportunityRepository {
     }
   }
 
-  private async getFilterOptions(): Promise<{
+  async getFilterOptions(): Promise<{
     types: string[];
     locations: string[];
     categories: string[];
@@ -353,17 +349,17 @@ export class OpportunityRepository {
     try {
       const [types, locations, categories] = await Promise.all([
         prisma.opportunity.findMany({
-          where: { status: "PUBLISHED" },
+          where: { status: OpportunityStatus.PUBLISHED },
           select: { type: true },
           distinct: ["type"],
         }),
         prisma.opportunity.findMany({
-          where: { status: "PUBLISHED" },
+          where: { status: OpportunityStatus.PUBLISHED },
           select: { location: true },
           distinct: ["location"],
         }),
         prisma.opportunity.findMany({
-          where: { status: "PUBLISHED" },
+          where: { status: OpportunityStatus.PUBLISHED },
           select: { category: true },
           distinct: ["category"],
         }),
@@ -526,7 +522,7 @@ export class OpportunityRepository {
           userId,
           opportunityId,
           applicationData,
-          status: "PENDING",
+          status: "pending",
         },
       });
 
@@ -597,7 +593,7 @@ export class OpportunityRepository {
       const where: any = {};
 
       if (filters.status) {
-        where.status = filters.status.toUpperCase();
+        where.status = filters.status.toLowerCase();
       }
 
       if (filters.search) {
@@ -666,16 +662,26 @@ export class OpportunityRepository {
   async getOpportunityStats(): Promise<{
     published: number;
     draft: number;
+    reviewed: number;
     archived: number;
   }> {
     try {
-      const [published, draft, archived] = await Promise.all([
-        prisma.opportunity.count({ where: { status: "PUBLISHED" } }),
-        prisma.opportunity.count({ where: { status: "DRAFT" } }),
-        prisma.opportunity.count({ where: { status: "ARCHIVED" } }),
+      const [published, draft, reviewed, archived] = await Promise.all([
+        prisma.opportunity.count({
+          where: { status: OpportunityStatus.PUBLISHED },
+        }),
+        prisma.opportunity.count({
+          where: { status: OpportunityStatus.DRAFT },
+        }),
+        prisma.opportunity.count({
+          where: { status: OpportunityStatus.REVIEWED },
+        }),
+        prisma.opportunity.count({
+          where: { status: OpportunityStatus.ARCHIVED },
+        }),
       ]);
 
-      return { published, draft, archived };
+      return { published, draft, reviewed, archived };
     } catch (error) {
       console.error("Error in getOpportunityStats:", error);
       throw error;
@@ -701,14 +707,14 @@ export class OpportunityRepository {
       return await prisma.opportunity.create({
         data: {
           title: opportunityData.title,
-          type: opportunityData.type.toUpperCase() as any,
+          type: opportunityData.type.toLowerCase(),
           description: opportunityData.description,
           deadline: opportunityData.deadline,
           location: opportunityData.location,
           amount: opportunityData.amount,
           link: opportunityData.link,
           category: opportunityData.category,
-          status: opportunityData.status.toUpperCase() as any,
+          status: opportunityData.status.toLowerCase(),
           detail: {
             create: {
               fullDescription: opportunityData.fullDescription || "",
@@ -785,14 +791,14 @@ export class OpportunityRepository {
             const createdOpportunity = await prisma.opportunity.create({
               data: {
                 title: opportunity.title.trim(),
-                type: opportunity.type.toUpperCase() as any,
+                type: opportunity.type.toLowerCase(),
                 description: opportunity.description.trim(),
                 deadline: deadline,
                 location: opportunity.location || "Remote",
                 amount: opportunity.amount || null,
                 link: opportunity.link || "",
                 category: opportunity.category || "General",
-                status: "DRAFT",
+                status: OpportunityStatus.DRAFT,
                 detail: {
                   create: {
                     fullDescription: opportunity.description,
@@ -862,10 +868,10 @@ export class OpportunityRepository {
       if (Object.keys(opportunityData).length > 0) {
         const processedData = { ...opportunityData };
         if (processedData.type) {
-          processedData.type = processedData.type.toUpperCase();
+          processedData.type = processedData.type.toLowerCase();
         }
         if (processedData.status) {
-          processedData.status = processedData.status.toUpperCase();
+          processedData.status = processedData.status.toLowerCase();
         }
         if (processedData.deadline) {
           processedData.deadline = new Date(processedData.deadline);
@@ -938,7 +944,27 @@ export class OpportunityRepository {
         return result.count;
       }
 
-      const status = action === "publish" ? "PUBLISHED" : "ARCHIVED";
+      // If action is publish and is aisGenerated is true, check reviewed status
+      if (action === "publish") {
+        const opportunities = await prisma.opportunity.findMany({
+          where: { id: { in: ids } },
+        });
+        const notReviewed = opportunities.filter(
+          (op) => op.isGenerated && op.status !== OpportunityStatus.REVIEWED
+        );
+        if (notReviewed.length > 0) {
+          throw new Error(
+            `Cannot publish opportunities that are not reviewed: ${notReviewed
+              .map((op) => op.title)
+              .join(", ")}`
+          );
+        }
+      }
+
+      const status =
+        action === "publish"
+          ? OpportunityStatus.PUBLISHED
+          : OpportunityStatus.ARCHIVED;
       const result = await prisma.opportunity.updateMany({
         where: { id: { in: ids } },
         data: { status: status as any },

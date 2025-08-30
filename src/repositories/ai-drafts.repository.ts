@@ -1,10 +1,11 @@
 import { prisma } from "../database/prisma";
-import { AIDraft } from "@prisma/client";
+import { AIDraft, Prisma } from "@prisma/client";
 import { Opportunity } from "../types";
+import { DraftStatus, DraftPriority, OpportunityStatus } from "../enums";
 
 export interface AIDraftFilters {
-  status?: "pending" | "approved" | "rejected";
-  priority?: "high" | "medium" | "low";
+  status?: string;
+  priority?: string;
 }
 
 export interface PaginationOptions {
@@ -27,11 +28,11 @@ export class AIDraftsRepository {
     const where: any = {};
 
     if (filters.status) {
-      where.status = filters.status.toUpperCase();
+      where.status = filters.status;
     }
 
     if (filters.priority) {
-      where.priority = filters.priority.toUpperCase();
+      where.priority = filters.priority;
     }
 
     const [drafts, total, pending] = await Promise.all([
@@ -45,7 +46,7 @@ export class AIDraftsRepository {
         ],
       }),
       prisma.aIDraft.count({ where }),
-      prisma.aIDraft.count({ where: { status: "PENDING" } }),
+      prisma.aIDraft.count({ where: { status: DraftStatus.PENDING } }),
     ]);
 
     return { drafts, total, pending };
@@ -70,27 +71,30 @@ export class AIDraftsRepository {
       data: {
         title: draftData.title,
         source: draftData.source,
-        status: "PENDING",
+        status: DraftStatus.PENDING,
         priority: draftData.priority.toUpperCase() as any,
         rawContent: draftData.rawContent,
-        
+
         // Store extracted data in individual columns
         extractedTitle: extracted.title,
         extractedType: extracted.type,
         extractedDescription: extracted.description,
-        extractedDeadline: extracted.deadline ? new Date(extracted.deadline) : null,
+        extractedDeadline: extracted.deadline
+          ? new Date(extracted.deadline)
+          : null,
         extractedLocation: extracted.location,
         extractedAmount: extracted.amount,
         extractedLink: extracted.link,
         extractedCategory: extracted.category,
         extractedFullDescription: extracted.fullDescription,
-        extractedApplicationInstructions: extracted.applicationInstructions || [],
+        extractedApplicationInstructions:
+          extracted.applicationInstructions || [],
         extractedEligibility: extracted.eligibility || [],
         extractedBenefits: extracted.benefits || [],
-        
+
         // Store additional data in JSON field if needed
         extractedData: extracted,
-        
+
         // Link to opportunity if provided
         opportunityId: draftData.opportunityId,
       },
@@ -129,12 +133,16 @@ export class AIDraftsRepository {
           title: opportunityData.title,
           type: opportunityData.type.toUpperCase() as any,
           description: opportunityData.description,
-          deadline: opportunityData.deadline ? new Date(opportunityData.deadline) : new Date(),
+          deadline: opportunityData.deadline
+            ? new Date(opportunityData.deadline)
+            : new Date(),
           location: opportunityData.location,
           amount: opportunityData.amount,
           link: opportunityData.link,
           category: opportunityData.category,
-          status: "DRAFT", // Start as draft for admin review
+          status: OpportunityStatus.REVIEWED, // Created from AI draft review,
+          isGenerated: true,
+          // Create associated detail record
           detail: {
             create: {
               fullDescription:
@@ -159,7 +167,7 @@ export class AIDraftsRepository {
       const draft = await prisma.aIDraft.update({
         where: { id: draftId },
         data: {
-          status: "APPROVED",
+          status: DraftStatus.APPROVED,
           reviewedAt: new Date(),
           opportunityId: opportunity.id,
         },
@@ -181,12 +189,12 @@ export class AIDraftsRepository {
     const [total, pending, approved, rejected, high, medium, low] =
       await Promise.all([
         prisma.aIDraft.count(),
-        prisma.aIDraft.count({ where: { status: "PENDING" } }),
-        prisma.aIDraft.count({ where: { status: "APPROVED" } }),
-        prisma.aIDraft.count({ where: { status: "REJECTED" } }),
-        prisma.aIDraft.count({ where: { priority: "HIGH" } }),
-        prisma.aIDraft.count({ where: { priority: "MEDIUM" } }),
-        prisma.aIDraft.count({ where: { priority: "LOW" } }),
+        prisma.aIDraft.count({ where: { status: DraftStatus.PENDING } }),
+        prisma.aIDraft.count({ where: { status: DraftStatus.APPROVED } }),
+        prisma.aIDraft.count({ where: { status: DraftStatus.REJECTED } }),
+        prisma.aIDraft.count({ where: { priority: DraftPriority.HIGH } }),
+        prisma.aIDraft.count({ where: { priority: DraftPriority.MEDIUM } }),
+        prisma.aIDraft.count({ where: { priority: DraftPriority.LOW } }),
       ]);
 
     return {
@@ -215,7 +223,7 @@ export class AIDraftsRepository {
 
   async findRecentDrafts(limit: number = 10): Promise<AIDraft[]> {
     return await prisma.aIDraft.findMany({
-      where: { status: "PENDING" },
+      where: { status: DraftStatus.PENDING },
       orderBy: { createdAt: "desc" },
       take: limit,
     });
@@ -233,28 +241,13 @@ export class AIDraftsRepository {
     });
   }
 
-  async updateDraftData(id: string, extractedData: any): Promise<AIDraft> {
+  async updateDraftData(
+    id: string,
+    data: Prisma.AIDraftUpdateInput
+  ): Promise<AIDraft> {
     return await prisma.aIDraft.update({
       where: { id },
-      data: {
-        // Update individual columns
-        extractedTitle: extractedData.title,
-        extractedType: extractedData.type,
-        extractedDescription: extractedData.description,
-        extractedDeadline: extractedData.deadline ? new Date(extractedData.deadline) : null,
-        extractedLocation: extractedData.location,
-        extractedAmount: extractedData.amount,
-        extractedLink: extractedData.link,
-        extractedCategory: extractedData.category,
-        extractedFullDescription: extractedData.fullDescription,
-        extractedApplicationInstructions: extractedData.applicationInstructions || [],
-        extractedEligibility: extractedData.eligibility || [],
-        extractedBenefits: extractedData.benefits || [],
-        
-        // Also update JSON field
-        extractedData,
-        updatedAt: new Date(),
-      },
+      data,
     });
   }
 

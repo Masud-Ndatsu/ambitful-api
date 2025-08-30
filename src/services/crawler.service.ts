@@ -1,10 +1,8 @@
 import {
   CrawlSource,
   CrawlLog,
-  CrawlSourceStatus,
-  CrawlFrequency,
-  CrawlStatus,
 } from "@prisma/client";
+import { CrawlSourceStatus, CrawlStatus } from "../enums";
 import {
   crawlerRepository,
   CreateCrawlSourceData,
@@ -125,7 +123,7 @@ export class CrawlerService {
 
     // Check if there are running crawls
     const runningCrawls = existingSource!.crawlLogs?.filter(
-      (log) => log.status === "RUNNING"
+      (log) => log.status === CrawlStatus.RUNNING
     );
     if (runningCrawls && runningCrawls.length > 0) {
       throw new CustomError(
@@ -138,15 +136,15 @@ export class CrawlerService {
   }
 
   async pauseCrawlSource(id: string): Promise<CrawlSource> {
-    return this.updateCrawlSource(id, { status: "PAUSED" });
+    return this.updateCrawlSource(id, { status: CrawlSourceStatus.PAUSED });
   }
 
   async resumeCrawlSource(id: string): Promise<CrawlSource> {
-    return this.updateCrawlSource(id, { status: "ACTIVE" });
+    return this.updateCrawlSource(id, { status: CrawlSourceStatus.ACTIVE });
   }
 
   async disableCrawlSource(id: string): Promise<CrawlSource> {
-    return this.updateCrawlSource(id, { status: "DISABLED" });
+    return this.updateCrawlSource(id, { status: CrawlSourceStatus.DISABLED });
   }
 
   async getActiveCrawlSources(): Promise<CrawlSource[]> {
@@ -165,13 +163,13 @@ export class CrawlerService {
       throw new CustomError("Crawl source not found", 404);
     }
 
-    if (source.status !== "ACTIVE") {
+    if (source.status !== CrawlSourceStatus.ACTIVE) {
       throw new CustomError("Cannot start crawl for inactive source", 400);
     }
 
     // Check if there's already a running crawl for this source
     const runningCrawls = source.crawlLogs?.filter(
-      (log) => log.status === "RUNNING"
+      (log) => log.status === CrawlStatus.RUNNING
     );
     if (runningCrawls && runningCrawls.length > 0) {
       throw new CustomError(
@@ -183,7 +181,7 @@ export class CrawlerService {
     // Create crawl log first
     const crawlLog = await crawlerRepository.createCrawlLog({
       sourceId,
-      status: "RUNNING",
+      status: CrawlStatus.RUNNING,
       startedAt: new Date(),
     });
 
@@ -232,7 +230,7 @@ export class CrawlerService {
 
       // Update crawl log with failure
       await crawlerRepository.updateCrawlLog(crawlLogId, {
-        status: "FAILED",
+        status: CrawlStatus.FAILED,
         errorMessage,
         completedAt: new Date(),
       });
@@ -255,7 +253,7 @@ export class CrawlerService {
 
   async completeCrawl(
     crawlLogId: string,
-    status: "SUCCESS" | "FAILED",
+    status: typeof CrawlStatus.SUCCESS | typeof CrawlStatus.FAILED,
     itemsFound?: number,
     errorMessage?: string
   ): Promise<CrawlLog> {
@@ -263,7 +261,7 @@ export class CrawlerService {
       throw new CustomError("Invalid crawl log ID");
     }
 
-    if (!["SUCCESS", "FAILED"].includes(status)) {
+    if (![CrawlStatus.SUCCESS, CrawlStatus.FAILED].includes(status)) {
       throw new CustomError("Invalid crawl status. Must be SUCCESS or FAILED");
     }
 
@@ -288,8 +286,8 @@ export class CrawlerService {
 
     // Update source last success status and error message
     await crawlerRepository.updateCrawlSource(crawlLog.sourceId, {
-      lastSuccess: status === "SUCCESS",
-      errorMessage: status === "FAILED" ? errorMessage : null,
+      lastSuccess: status === CrawlStatus.SUCCESS,
+      errorMessage: status === CrawlStatus.FAILED ? errorMessage : null,
     });
 
     return crawlLog;
@@ -385,15 +383,15 @@ export class CrawlerService {
     // Count consecutive failures from the most recent logs
     let consecutiveFailures = 0;
     for (const log of recentLogs) {
-      if (log.status === "FAILED") {
+      if (log.status === CrawlStatus.FAILED) {
         consecutiveFailures++;
-      } else if (log.status === "SUCCESS") {
+      } else if (log.status === CrawlStatus.SUCCESS) {
         break;
       }
     }
 
     // Calculate average items found from successful crawls
-    const successfulLogs = recentLogs.filter((log) => log.status === "SUCCESS");
+    const successfulLogs = recentLogs.filter((log) => log.status === CrawlStatus.SUCCESS);
     const averageItemsFound =
       successfulLogs.length > 0
         ? Math.round(
