@@ -1,4 +1,5 @@
 import Joi from "joi";
+import { CrawlSourceStatus, CrawlFrequency } from "../enums";
 
 // Create Crawl Source
 export const createCrawlSourceSchema = Joi.object({
@@ -16,16 +17,16 @@ export const createCrawlSourceSchema = Joi.object({
       "string.uri": "Must be a valid URL with protocol (http/https)",
     }),
   status: Joi.string()
-    .valid("ACTIVE", "PAUSED", "DISABLED")
+    .valid(...Object.values(CrawlSourceStatus))
     .optional()
     .messages({
-      "any.only": "Status must be ACTIVE, PAUSED, or DISABLED",
+      "any.only": "Status must be active, paused, or disabled",
     }),
   frequency: Joi.string()
-    .valid("HOURLY", "DAILY", "WEEKLY", "MONTHLY")
+    .valid(...Object.values(CrawlFrequency))
     .optional()
     .messages({
-      "any.only": "Frequency must be HOURLY, DAILY, WEEKLY, or MONTHLY",
+      "any.only": "Frequency must be hourly, daily, weekly, or monthly",
     }),
   maxResults: Joi.number().integer().min(1).max(1000).optional().messages({
     "number.base": "Max results must be a number",
@@ -48,16 +49,16 @@ export const updateCrawlSourceSchema = Joi.object({
       "string.uri": "Must be a valid URL with protocol (http/https)",
     }),
   status: Joi.string()
-    .valid("ACTIVE", "PAUSED", "DISABLED")
+    .valid(...Object.values(CrawlSourceStatus))
     .optional()
     .messages({
-      "any.only": "Status must be ACTIVE, PAUSED, or DISABLED",
+      "any.only": "Status must be active, paused, or disabled",
     }),
   frequency: Joi.string()
-    .valid("HOURLY", "DAILY", "WEEKLY", "MONTHLY")
+    .valid(...Object.values(CrawlFrequency))
     .optional()
     .messages({
-      "any.only": "Frequency must be HOURLY, DAILY, WEEKLY, or MONTHLY",
+      "any.only": "Frequency must be hourly, daily, weekly, or monthly",
     }),
   maxResults: Joi.number().integer().min(1).max(1000).optional().messages({
     "number.base": "Max results must be a number",
@@ -77,16 +78,16 @@ export const idParamSchema = Joi.object({
 // Query for getCrawlSources
 export const getCrawlSourcesQuerySchema = Joi.object({
   status: Joi.string()
-    .valid("ACTIVE", "PAUSED", "DISABLED")
+    .valid(...Object.values(CrawlSourceStatus))
     .optional()
     .messages({
-      "any.only": "Status must be ACTIVE, PAUSED, or DISABLED",
+      "any.only": "Status must be active, paused, or disabled",
     }),
   frequency: Joi.string()
-    .valid("HOURLY", "DAILY", "WEEKLY", "MONTHLY")
+    .valid(...Object.values(CrawlFrequency))
     .optional()
     .messages({
-      "any.only": "Frequency must be HOURLY, DAILY, WEEKLY, or MONTHLY",
+      "any.only": "Frequency must be hourly, daily, weekly, or monthly",
     }),
   search: Joi.string().trim().min(1).max(255).optional().messages({
     "string.min": "Search term must be between 1 and 255 characters",

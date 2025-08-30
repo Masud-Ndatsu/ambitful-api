@@ -1,10 +1,11 @@
 import Joi from 'joi';
+import { OpportunityType } from '../enums';
 
 export const opportunitiesQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(10),
   search: Joi.string().optional(),
-  type: Joi.string().valid('scholarship', 'internship', 'fellowship', 'grant').optional(),
+  type: Joi.string().valid(...Object.values(OpportunityType)).optional(),
   location: Joi.string().optional(),
   deadline: Joi.string().isoDate().optional(),
   sortBy: Joi.string().valid('newest', 'deadline', 'relevance').default('newest'),
