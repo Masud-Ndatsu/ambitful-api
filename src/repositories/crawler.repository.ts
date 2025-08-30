@@ -1,26 +1,24 @@
-import {
-  PrismaClient,
-  CrawlSource,
-  CrawlLog,
-  CrawlSourceStatus,
-  CrawlFrequency,
-  CrawlStatus,
-} from "@prisma/client";
+import { PrismaClient, CrawlSource, CrawlLog } from "@prisma/client";
 import { prisma } from "../database/prisma";
+import {
+  CrawlFrequencyType,
+  CrawlSourceStatusType,
+  CrawlStatusType,
+} from "../enums";
 
 export interface CreateCrawlSourceData {
   name: string;
   url: string;
-  status?: CrawlSourceStatus;
-  frequency?: CrawlFrequency;
+  status?: CrawlSourceStatusType;
+  frequency?: CrawlFrequencyType;
   maxResults?: number;
 }
 
 export interface UpdateCrawlSourceData {
   name?: string;
   url?: string;
-  status?: CrawlSourceStatus;
-  frequency?: CrawlFrequency;
+  status?: CrawlSourceStatusType;
+  frequency?: CrawlFrequencyType;
   maxResults?: number;
   lastCrawl?: Date;
   lastSuccess?: boolean;
@@ -29,7 +27,7 @@ export interface UpdateCrawlSourceData {
 
 export interface CreateCrawlLogData {
   sourceId: string;
-  status: CrawlStatus;
+  status: CrawlStatusType;
   itemsFound?: number;
   errorMessage?: string;
   startedAt?: Date;
@@ -37,8 +35,8 @@ export interface CreateCrawlLogData {
 }
 
 export interface CrawlSourceFilters {
-  status?: CrawlSourceStatus;
-  frequency?: CrawlFrequency;
+  status?: CrawlSourceStatusType;
+  frequency?: CrawlFrequencyType;
   search?: string;
 }
 

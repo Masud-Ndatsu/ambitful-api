@@ -108,7 +108,7 @@ CrawlerEvents.on(
 
         // Complete the crawl log with 0 items found
         await crawlerRepository.updateCrawlLog(crawlLogId, {
-          status: "SUCCESS",
+          status: "success",
           itemsFound: 0,
           completedAt: new Date(),
         });
@@ -148,7 +148,7 @@ CrawlerEvents.on(
 
       // Update crawl log with failure
       await crawlerRepository.updateCrawlLog(crawlLogId, {
-        status: "FAILED",
+        status: "failed",
         errorMessage,
         completedAt: new Date(),
       });
@@ -187,11 +187,13 @@ CrawlerEvents.on(
       const uniqueOpportunities =
         await opportunityRepository.filterDuplicateOpportunities(opportunities);
 
-      console.log(`Found ${uniqueOpportunities.length} unique opportunities after deduplication`);
+      console.log(
+        `Found ${uniqueOpportunities.length} unique opportunities after deduplication`
+      );
 
       // 2. Save opportunities to database as draft status with AI draft records
       const createdOpportunities: string[] = [];
-      
+
       for (const opportunity of uniqueOpportunities) {
         try {
           // Parse deadline
@@ -210,24 +212,27 @@ CrawlerEvents.on(
           }
 
           // Create opportunity with DRAFT status
-          const createdOpportunity = await opportunityRepository.createOpportunity({
-            title: opportunity.title.trim(),
-            type: opportunity.type,
-            description: opportunity.description.trim(),
-            fullDescription: opportunity.description,
-            deadline: deadline,
-            location: opportunity.location || "Remote",
-            amount: opportunity.amount || null,
-            link: opportunity.link || "",
-            category: opportunity.category || "General",
-            status: "DRAFT",
-            eligibility: [],
-            benefits: [],
-            applicationInstructions: [],
-          });
+          const createdOpportunity =
+            await opportunityRepository.createOpportunity({
+              title: opportunity.title.trim(),
+              type: opportunity.type,
+              description: opportunity.description.trim(),
+              fullDescription: opportunity.description,
+              deadline: deadline,
+              location: opportunity.location || "Remote",
+              amount: opportunity.amount || null,
+              link: opportunity.link || "",
+              category: opportunity.category || "General",
+              status: "DRAFT",
+              eligibility: [],
+              benefits: [],
+              applicationInstructions: [],
+            });
 
           // Create corresponding AI draft record
-          const crawlSource = await crawlerRepository.getCrawlSourceById(sourceId);
+          const crawlSource = await crawlerRepository.getCrawlSourceById(
+            sourceId
+          );
           const sourceUrl = crawlSource?.url || "Unknown";
 
           await aiDraftsRepository.createDraft({
@@ -253,19 +258,26 @@ CrawlerEvents.on(
           });
 
           createdOpportunities.push(createdOpportunity.id);
-          console.log(`Created opportunity: ${opportunity.title} (ID: ${createdOpportunity.id})`);
+          console.log(
+            `Created opportunity: ${opportunity.title} (ID: ${createdOpportunity.id})`
+          );
         } catch (error) {
-          console.error(`Failed to create opportunity: ${opportunity.title}`, error);
+          console.error(
+            `Failed to create opportunity: ${opportunity.title}`,
+            error
+          );
         }
       }
 
-      console.log(`Successfully created ${createdOpportunities.length} opportunities from crawl`);
+      console.log(
+        `Successfully created ${createdOpportunities.length} opportunities from crawl`
+      );
 
       // 3. Trigger additional processing (notifications, etc.)
 
       // For now, we'll just complete the crawl log successfully
       await crawlerRepository.updateCrawlLog(crawlLogId, {
-        status: "SUCCESS",
+        status: "success",
         itemsFound: uniqueOpportunities.length,
         completedAt: new Date(),
       });
@@ -298,7 +310,7 @@ CrawlerEvents.on(
 
       // Update crawl log with failure
       await crawlerRepository.updateCrawlLog(crawlLogId, {
-        status: "FAILED",
+        status: "failed",
         errorMessage,
         completedAt: new Date(),
       });

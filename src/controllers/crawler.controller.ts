@@ -44,7 +44,7 @@ export class CrawlerController {
         status: status as string,
         frequency: frequency as string,
         maxResults: maxResults ? parseInt(maxResults) : undefined,
-      };
+      } as any;
 
       const source = await this.crawlerService.createCrawlSource(sourceData);
 
@@ -61,8 +61,7 @@ export class CrawlerController {
       if (name !== undefined) updateData.name = name.trim();
       if (url !== undefined) updateData.url = url.trim();
       if (status !== undefined) updateData.status = status as string;
-      if (frequency !== undefined)
-        updateData.frequency = frequency as string;
+      if (frequency !== undefined) updateData.frequency = frequency as string;
       if (maxResults !== undefined)
         updateData.maxResults = parseInt(maxResults);
 

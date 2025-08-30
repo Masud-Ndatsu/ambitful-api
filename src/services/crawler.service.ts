@@ -1,8 +1,5 @@
-import {
-  CrawlSource,
-  CrawlLog,
-} from "@prisma/client";
-import { CrawlSourceStatus, CrawlStatus } from "../enums";
+import { CrawlSource, CrawlLog } from "@prisma/client";
+import { CrawlSourceStatus, CrawlStatus, CrawlStatusType } from "../enums";
 import {
   crawlerRepository,
   CreateCrawlSourceData,
@@ -266,7 +263,7 @@ export class CrawlerService {
     }
 
     const updateData: Partial<CreateCrawlLogData> = {
-      status: status as CrawlStatus,
+      status: status as CrawlStatusType,
       completedAt: new Date(),
     };
 
@@ -391,7 +388,9 @@ export class CrawlerService {
     }
 
     // Calculate average items found from successful crawls
-    const successfulLogs = recentLogs.filter((log) => log.status === CrawlStatus.SUCCESS);
+    const successfulLogs = recentLogs.filter(
+      (log) => log.status === CrawlStatus.SUCCESS
+    );
     const averageItemsFound =
       successfulLogs.length > 0
         ? Math.round(
