@@ -203,6 +203,37 @@ export class OpportunityRepository {
     }
   }
 
+  async findOpportunityByTitleAndDeadline(
+    title: string,
+    deadline: Date
+  ): Promise<Opportunity | null> {
+    try {
+      const opportunity = await prisma.opportunity.findFirst({
+        where: {
+          title: {
+            equals: title,
+            mode: "insensitive",
+          },
+          deadline: deadline,
+        },
+        include: {
+          detail: true,
+          _count: {
+            select: {
+              applications: true,
+              savedOpportunities: true,
+            },
+          },
+        },
+      });
+
+      return opportunity;
+    } catch (error) {
+      console.error("Error finding opportunity by title and deadline:", error);
+      throw error;
+    }
+  }
+
   async findOpportunityById(
     id: string
   ): Promise<(Opportunity & { detail?: OpportunityDetail | null }) | null> {
@@ -566,6 +597,7 @@ export class OpportunityRepository {
     opportunityId: string
   ): Promise<boolean> {
     try {
+      // TODO: Track user-specific views with userId for analytics
       // Check if opportunity exists and increment view count
       const opportunity = await this.findOpportunityById(opportunityId);
       if (opportunity && opportunity.detail) {
@@ -707,14 +739,14 @@ export class OpportunityRepository {
       return await prisma.opportunity.create({
         data: {
           title: opportunityData.title,
-          type: opportunityData.type.toLowerCase(),
+          type: opportunityData.type,
           description: opportunityData.description,
           deadline: opportunityData.deadline,
           location: opportunityData.location,
           amount: opportunityData.amount,
           link: opportunityData.link,
           category: opportunityData.category,
-          status: opportunityData.status.toLowerCase(),
+          status: opportunityData.status,
           detail: {
             create: {
               fullDescription: opportunityData.fullDescription || "",

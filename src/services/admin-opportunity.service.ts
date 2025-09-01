@@ -68,6 +68,18 @@ export class AdminOpportunityService {
       deadline: new Date(opportunityData.deadline),
     };
 
+    const existingOpportunity =
+      await this.opportunityRepository.findOpportunityByTitleAndDeadline(
+        processedData.title,
+        processedData.deadline
+      );
+    if (existingOpportunity) {
+      throw new CustomError(
+        "An opportunity with the same title and deadline already exists",
+        400
+      );
+    }
+
     const opportunity = await this.opportunityRepository.createOpportunity(
       processedData
     );

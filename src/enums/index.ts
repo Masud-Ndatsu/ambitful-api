@@ -9,11 +9,21 @@ export enum CRAWLER_EVENTS {
   OPPORTUNITIES_EXTRACTED = "OPPORTUNITIES_EXTRACTED",
 }
 
+export const DEFAULT_CATEGORIES = [
+  "Technology",
+  "Healthcare",
+  "Business",
+  "Education",
+  "Research",
+  "Arts",
+  "Social",
+  "General",
+];
 
 // Application-level enums as lowercase strings
 export const UserStatus = {
   ACTIVE: "active",
-  INACTIVE: "inactive", 
+  INACTIVE: "inactive",
   SUSPENDED: "suspended",
 } as const;
 
@@ -24,7 +34,7 @@ export const UserRole = {
 
 export const OpportunityType = {
   FULLTIME: "fulltime",
-  PARTTIME: "parttime", 
+  PARTTIME: "parttime",
   FREELANCE: "freelance",
   CONTRACT: "contract",
   REMOTE: "remote",
@@ -32,7 +42,7 @@ export const OpportunityType = {
   ENTREPRENEURSHIP: "entrepreneurship",
   VOLUNTEER: "volunteer",
   SCHOLARSHIP: "scholarship",
-  FELLOWSHIP: "fellowship", 
+  FELLOWSHIP: "fellowship",
   GRANT: "grant",
 } as const;
 
@@ -67,7 +77,7 @@ export const TokenType = {
 
 export const ApplicationStatus = {
   PENDING: "pending",
-  SUBMITTED: "submitted", 
+  SUBMITTED: "submitted",
   REVIEWED: "reviewed",
   ACCEPTED: "accepted",
   REJECTED: "rejected",
@@ -94,25 +104,34 @@ export const CrawlStatus = {
 } as const;
 
 // Type exports for TypeScript
-export type UserStatusType = typeof UserStatus[keyof typeof UserStatus];
-export type UserRoleType = typeof UserRole[keyof typeof UserRole];
-export type OpportunityTypeType = typeof OpportunityType[keyof typeof OpportunityType];
-export type OpportunityStatusType = typeof OpportunityStatus[keyof typeof OpportunityStatus];
-export type DraftStatusType = typeof DraftStatus[keyof typeof DraftStatus];
-export type DraftPriorityType = typeof DraftPriority[keyof typeof DraftPriority];
-export type MessageSenderType = typeof MessageSender[keyof typeof MessageSender];
-export type TokenTypeType = typeof TokenType[keyof typeof TokenType];
-export type ApplicationStatusType = typeof ApplicationStatus[keyof typeof ApplicationStatus];
-export type CrawlSourceStatusType = typeof CrawlSourceStatus[keyof typeof CrawlSourceStatus];
-export type CrawlFrequencyType = typeof CrawlFrequency[keyof typeof CrawlFrequency];
-export type CrawlStatusType = typeof CrawlStatus[keyof typeof CrawlStatus];
+export type UserStatusType = (typeof UserStatus)[keyof typeof UserStatus];
+export type UserRoleType = (typeof UserRole)[keyof typeof UserRole];
+export type OpportunityTypeType =
+  (typeof OpportunityType)[keyof typeof OpportunityType];
+export type OpportunityStatusType =
+  (typeof OpportunityStatus)[keyof typeof OpportunityStatus];
+export type DraftStatusType = (typeof DraftStatus)[keyof typeof DraftStatus];
+export type DraftPriorityType =
+  (typeof DraftPriority)[keyof typeof DraftPriority];
+export type MessageSenderType =
+  (typeof MessageSender)[keyof typeof MessageSender];
+export type TokenTypeType = (typeof TokenType)[keyof typeof TokenType];
+export type ApplicationStatusType =
+  (typeof ApplicationStatus)[keyof typeof ApplicationStatus];
+export type CrawlSourceStatusType =
+  (typeof CrawlSourceStatus)[keyof typeof CrawlSourceStatus];
+export type CrawlFrequencyType =
+  (typeof CrawlFrequency)[keyof typeof CrawlFrequency];
+export type CrawlStatusType = (typeof CrawlStatus)[keyof typeof CrawlStatus];
 
 // Helper functions to validate enum values
 export function isValidUserStatus(value: string): value is UserStatusType {
   return Object.values(UserStatus).includes(value as UserStatusType);
 }
 
-export function isValidOpportunityType(value: string): value is OpportunityTypeType {
+export function isValidOpportunityType(
+  value: string
+): value is OpportunityTypeType {
   return Object.values(OpportunityType).includes(value as OpportunityTypeType);
 }
 
@@ -120,8 +139,12 @@ export function isValidDraftStatus(value: string): value is DraftStatusType {
   return Object.values(DraftStatus).includes(value as DraftStatusType);
 }
 
-export function isValidApplicationStatus(value: string): value is ApplicationStatusType {
-  return Object.values(ApplicationStatus).includes(value as ApplicationStatusType);
+export function isValidApplicationStatus(
+  value: string
+): value is ApplicationStatusType {
+  return Object.values(ApplicationStatus).includes(
+    value as ApplicationStatusType
+  );
 }
 
 export function isValidCrawlStatus(value: string): value is CrawlStatusType {

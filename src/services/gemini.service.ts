@@ -2,6 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import { Opportunity, ParsedOpportunity } from "../types";
 import { OpportunityRepository } from "../repositories/opportunity.repository";
 import { CustomError } from "../middleware/errorHandler";
+import { DEFAULT_CATEGORIES, OpportunityType } from "../enums";
 
 export interface ChatContext {
   userProfile: {
@@ -42,19 +43,20 @@ export class GeminiService {
     blockHtml: string
   ): Promise<ParsedOpportunity[]> {
     // Get categories dynamically from existing opportunities
-    const filterOptions = await this.opportunityRepository.getFilterOptions();
-    const categoriesList = filterOptions.categories.length > 0 
-      ? filterOptions.categories.join(", ")
-      : "Technology, Healthcare, Business, Education, Research, Arts, Social, General";
-
+    // const categories =
+    const categoriesList =
+      DEFAULT_CATEGORIES.length > 0
+        ? DEFAULT_CATEGORIES.join(", ")
+        : "Technology, Healthcare, Business, Education, Research, Arts, Social, General";
+    const opportunityTypes = Object.values(OpportunityType).join(", ");
     const prompt = `
 From the following HTML block, extract all distinct opportunities.
 For each opportunity, return a JSON object with the following fields:
 
 "title": A concise, descriptive name of the opportunity. (REQUIRED)
 "description": A brief summary of the opportunity, typically the first 2-3 sentences. (REQUIRED)
-"type": The type of opportunity. Must be one of: "SCHOLARSHIP", "INTERNSHIP", "FELLOWSHIP", "GRANT". (REQUIRED)
-"deadline": The application deadline in YYYY-MM-DD format. If no deadline is found or deadline has passed, use a date far in the future (e.g., "2099-12-31").
+"type": The type of opportunity. Must be one of: ${opportunityTypes}. (REQUIRED)
+"deadline": The application deadline in YYYY-MM-DD format. IMPORTANT: Always use a future date. If no deadline is found or deadline has passed, use a date far in the future (e.g., "2099-12-31"). Never use past dates.
 "link": The full, absolute URL to apply or learn more about the opportunity. (REQUIRED)
 "location": The primary work/study location (e.g., "New York, NY", "Remote", "Multiple Cities"). If not found, use "Not Specified".
 "amount": The monetary value, stipend, or scholarship amount (e.g., "$5,000", "Full tuition", "€10,000"). If not found, provide null.
