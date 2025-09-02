@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { Opportunity, ParsedOpportunity } from "../types";
-import { OpportunityRepository } from "../repositories/opportunity.repository";
+import { opportunityRepository } from "../repositories/opportunity.repository";
 import { CustomError } from "../middleware/errorHandler";
 import { DEFAULT_CATEGORIES, OpportunityType } from "../enums";
 
@@ -27,8 +27,6 @@ export interface AIResponse {
 
 export class GeminiService {
   private genAI: GoogleGenAI;
-  private opportunityRepository: OpportunityRepository;
-
   constructor() {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -36,7 +34,6 @@ export class GeminiService {
     }
 
     this.genAI = new GoogleGenAI({ apiKey });
-    this.opportunityRepository = new OpportunityRepository();
   }
 
   async parseBlockToOpportunities(
@@ -284,7 +281,7 @@ Your role is to provide helpful, personalized career guidance and opportunity re
 
       // Search for opportunities based on keywords
       const searchResults =
-        await this.opportunityRepository.findOpportunitiesWithPagination(
+        await opportunityRepository.findOpportunitiesWithPagination(
           {
             search: keywords[0], // Use the first keyword for search
             sortBy: "relevance",
@@ -610,3 +607,5 @@ If you cannot extract valid opportunity information, return null.`;
     return match ? match[1].trim() : raw.trim();
   }
 }
+
+export const geminiService = new GeminiService();

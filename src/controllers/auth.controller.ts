@@ -1,20 +1,18 @@
 import { Request, Response, NextFunction } from "express";
-import { AuthService } from "../services/auth.service";
+import { authService } from "../services/auth.service";
 import { asyncHandler, CustomError } from "../middleware/errorHandler";
 import { SuccessResponse } from "../utils/response";
 
 export class AuthController {
-  private authService: AuthService;
-
   constructor() {
-    this.authService = new AuthService();
+    // No need to initialize service - using singleton
   }
 
   register = asyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       const { name, email, password, country, interests } = req.body;
 
-      const result = await this.authService.register({
+      const result = await authService.register({
         name,
         email,
         password,
@@ -29,7 +27,7 @@ export class AuthController {
   login = asyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       const { email, password } = req.body;
-      const result = await this.authService.login(email, password);
+      const result = await authService.login(email, password);
 
       SuccessResponse(res, result, 'Login successful');
     }
@@ -37,7 +35,7 @@ export class AuthController {
 
   logout = asyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-      const result = await this.authService.logout();
+      const result = await authService.logout();
       SuccessResponse(res, result, 'Logout successful');
     }
   );
@@ -45,7 +43,7 @@ export class AuthController {
   forgotPassword = asyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       const { email } = req.body;
-      const result = await this.authService.forgotPassword(email);
+      const result = await authService.forgotPassword(email);
       SuccessResponse(res, result, 'Password reset email sent');
     }
   );
@@ -53,7 +51,7 @@ export class AuthController {
   resetPassword = asyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       const { token, password } = req.body;
-      const result = await this.authService.resetPassword(token, password);
+      const result = await authService.resetPassword(token, password);
       SuccessResponse(res, result, 'Password reset successful');
     }
   );
@@ -61,7 +59,7 @@ export class AuthController {
   verifyEmail = asyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       const { token } = req.params;
-      const result = await this.authService.verifyEmail(token);
+      const result = await authService.verifyEmail(token);
       SuccessResponse(res, result, 'Email verified successfully');
     }
   );

@@ -256,3 +256,5 @@ export class TestimonialsRepository {
     return result.count;
   }
 }
+
+export const testimonialsRepository = new TestimonialsRepository();

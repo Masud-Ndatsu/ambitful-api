@@ -1,7 +1,7 @@
 import TypedEventEmitter from ".";
 import { OPPORTUNITY_EVENTS } from "../enums/";
 import { GeminiService } from "../services/gemini.service";
-import { OpportunityRepository } from "../repositories/opportunity.repository";
+import { opportunityRepository } from "../repositories/opportunity.repository";
 import { CustomError } from "../middleware/errorHandler";
 
 type OpportunityEventsTypes = {
@@ -15,7 +15,6 @@ export const OpportunityEvents =
   new TypedEventEmitter<OpportunityEventsTypes>();
 
 const geminiService = new GeminiService();
-const opportunityRepository = new OpportunityRepository();
 
 OpportunityEvents.on(
   OPPORTUNITY_EVENTS.IMPROVE_OPPORTUNITY_DATA,

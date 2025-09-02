@@ -1,13 +1,11 @@
 import { Request, Response, NextFunction } from "express";
-import { CrawlerService } from "../services/crawler.service";
+import { crawlerService } from "../services/crawler.service";
 import { asyncHandler } from "../middleware/errorHandler";
 import { SuccessResponse } from "../utils/response";
 
 export class CrawlerController {
-  private crawlerService: CrawlerService;
-
   constructor() {
-    this.crawlerService = new CrawlerService();
+    // No initialization needed - using singleton services
   }
 
   getCrawlSources = asyncHandler(
@@ -19,7 +17,7 @@ export class CrawlerController {
       if (frequency) filters.frequency = frequency as string;
       if (search) filters.search = search as string;
 
-      const sources = await this.crawlerService.getCrawlSources(filters);
+      const sources = await crawlerService.getCrawlSources(filters);
 
       SuccessResponse(res, sources, "Crawl sources retrieved successfully");
     }
@@ -28,7 +26,7 @@ export class CrawlerController {
   getCrawlSourceById = asyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       const { id } = req.params;
-      const source = await this.crawlerService.getCrawlSourceById(id);
+      const source = await crawlerService.getCrawlSourceById(id);
 
       SuccessResponse(res, source, "Crawl source retrieved successfully");
     }
@@ -46,7 +44,7 @@ export class CrawlerController {
         maxResults: maxResults ? parseInt(maxResults) : undefined,
       } as any;
 
-      const source = await this.crawlerService.createCrawlSource(sourceData);
+      const source = await crawlerService.createCrawlSource(sourceData);
 
       SuccessResponse(res, source, "Crawl source created successfully", 201);
     }
@@ -65,7 +63,7 @@ export class CrawlerController {
       if (maxResults !== undefined)
         updateData.maxResults = parseInt(maxResults);
 
-      const source = await this.crawlerService.updateCrawlSource(
+      const source = await crawlerService.updateCrawlSource(
         id,
         updateData
       );
@@ -77,7 +75,7 @@ export class CrawlerController {
   deleteCrawlSource = asyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       const { id } = req.params;
-      await this.crawlerService.deleteCrawlSource(id);
+      await crawlerService.deleteCrawlSource(id);
 
       SuccessResponse(res, null, "Crawl source deleted successfully");
     }
@@ -86,7 +84,7 @@ export class CrawlerController {
   pauseCrawlSource = asyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       const { id } = req.params;
-      const source = await this.crawlerService.pauseCrawlSource(id);
+      const source = await crawlerService.pauseCrawlSource(id);
 
       SuccessResponse(res, source, "Crawl source paused successfully");
     }
@@ -95,7 +93,7 @@ export class CrawlerController {
   resumeCrawlSource = asyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       const { id } = req.params;
-      const source = await this.crawlerService.resumeCrawlSource(id);
+      const source = await crawlerService.resumeCrawlSource(id);
 
       SuccessResponse(res, source, "Crawl source resumed successfully");
     }
@@ -104,7 +102,7 @@ export class CrawlerController {
   disableCrawlSource = asyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       const { id } = req.params;
-      const source = await this.crawlerService.disableCrawlSource(id);
+      const source = await crawlerService.disableCrawlSource(id);
 
       SuccessResponse(res, source, "Crawl source disabled successfully");
     }
@@ -113,7 +111,7 @@ export class CrawlerController {
   startCrawl = asyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       const { id } = req.params;
-      const crawlLog = await this.crawlerService.startCrawl(id);
+      const crawlLog = await crawlerService.startCrawl(id);
 
       SuccessResponse(res, crawlLog, "Crawl started successfully");
     }
@@ -124,7 +122,7 @@ export class CrawlerController {
       const { id } = req.params;
       const { limit } = req.query;
 
-      const logs = await this.crawlerService.getCrawlLogsBySourceId(
+      const logs = await crawlerService.getCrawlLogsBySourceId(
         id,
         limit ? parseInt(limit as string) : undefined
       );
@@ -137,7 +135,7 @@ export class CrawlerController {
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       const { limit } = req.query;
 
-      const logs = await this.crawlerService.getRecentCrawlLogs(
+      const logs = await crawlerService.getRecentCrawlLogs(
         limit ? parseInt(limit as string) : undefined
       );
 
@@ -147,7 +145,7 @@ export class CrawlerController {
 
   getCrawlStats = asyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-      const stats = await this.crawlerService.getCrawlStats();
+      const stats = await crawlerService.getCrawlStats();
       SuccessResponse(res, stats, "Crawler statistics retrieved successfully");
     }
   );
@@ -155,7 +153,7 @@ export class CrawlerController {
   getSourceHealth = asyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       const { id } = req.params;
-      const health = await this.crawlerService.getSourceHealthStatus(id);
+      const health = await crawlerService.getSourceHealthStatus(id);
 
       SuccessResponse(
         res,
@@ -167,7 +165,7 @@ export class CrawlerController {
 
   getActiveCrawlSources = asyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-      const sources = await this.crawlerService.getActiveCrawlSources();
+      const sources = await crawlerService.getActiveCrawlSources();
       SuccessResponse(
         res,
         sources,
@@ -178,7 +176,7 @@ export class CrawlerController {
 
   getCrawlSourcesDueForCrawl = asyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-      const sources = await this.crawlerService.getCrawlSourcesDueForCrawl();
+      const sources = await crawlerService.getCrawlSourcesDueForCrawl();
       SuccessResponse(
         res,
         sources,

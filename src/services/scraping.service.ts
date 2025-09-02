@@ -1,5 +1,5 @@
 import { GeminiService } from "./gemini.service";
-import { AIDraftsRepository } from "../repositories/ai-drafts.repository";
+import { aiDraftsRepository } from "../repositories/ai-drafts.repository";
 import { CustomError } from "../middleware/errorHandler";
 import axios, { AxiosResponse } from "axios";
 import * as cheerio from "cheerio";
@@ -27,11 +27,9 @@ export interface ScrapingResult {
 
 export class ScrapingService {
   private geminiService: GeminiService;
-  private draftsRepository: AIDraftsRepository;
 
   constructor() {
     this.geminiService = new GeminiService();
-    this.draftsRepository = new AIDraftsRepository();
   }
 
   async fetchPageContent(url: string): Promise<string> {
@@ -179,3 +177,5 @@ export class ScrapingService {
     }
   }
 }
+
+export const scrapingService = new ScrapingService();

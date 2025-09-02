@@ -1,20 +1,18 @@
 import { Request, Response, NextFunction } from 'express';
-import { UserService } from '../services/user.service';
+import { userService } from '../services/user.service';
 import { asyncHandler } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
 import { SuccessResponse } from '../utils/response';
 
 export class UserController {
-  private userService: UserService;
-
   constructor() {
-    this.userService = new UserService();
+    // No need to initialize service - using singleton
   }
 
   getProfile = asyncHandler(
     async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
       const userId = req.user!.userId;
-      const user = await this.userService.getUserProfile(userId);
+      const user = await userService.getUserProfile(userId);
       SuccessResponse(res, user, 'User profile retrieved successfully');
     }
   );
@@ -24,7 +22,7 @@ export class UserController {
       const userId = req.user!.userId;
       const { name, email, country, interests, profilePicture } = req.body;
 
-      const user = await this.userService.updateUserProfile(userId, {
+      const user = await userService.updateUserProfile(userId, {
         name,
         email,
         country,
@@ -41,7 +39,7 @@ export class UserController {
       const requesterId = req.user!.userId;
       const targetUserId = req.params.id;
 
-      const user = await this.userService.getUserById(requesterId, targetUserId);
+      const user = await userService.getUserById(requesterId, targetUserId);
       SuccessResponse(res, user, 'User retrieved successfully');
     }
   );
@@ -49,7 +47,7 @@ export class UserController {
   deleteUser = asyncHandler(
     async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
       const userId = req.params.id;
-      const result = await this.userService.deleteUser(userId);
+      const result = await userService.deleteUser(userId);
       SuccessResponse(res, result, 'User deleted successfully');
     }
   );

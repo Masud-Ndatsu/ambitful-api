@@ -429,3 +429,5 @@ export class AnalyticsRepository {
     return `${minutes}m ${seconds}s`;
   }
 }
+
+export const analyticsRepository = new AnalyticsRepository();

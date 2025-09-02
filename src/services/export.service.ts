@@ -1,4 +1,4 @@
-import { AnalyticsRepository } from "../repositories/analytics.repository";
+import { analyticsRepository } from "../repositories/analytics.repository";
 import { CustomError } from "../middleware/errorHandler";
 
 export interface ExportOptions {
@@ -10,10 +10,8 @@ export interface ExportOptions {
 }
 
 export class ExportService {
-  private analyticsRepository: AnalyticsRepository;
-
   constructor() {
-    this.analyticsRepository = new AnalyticsRepository();
+    // No need to initialize repository - using singleton
   }
 
   async exportData(options: ExportOptions): Promise<{
@@ -47,13 +45,13 @@ export class ExportService {
   private async getData(options: ExportOptions): Promise<any[]> {
     switch (options.type) {
       case "users":
-        return await this.analyticsRepository.getUsersExportData();
+        return await analyticsRepository.getUsersExportData();
 
       case "opportunities":
-        return await this.analyticsRepository.getOpportunitiesExportData();
+        return await analyticsRepository.getOpportunitiesExportData();
 
       case "analytics":
-        return await this.analyticsRepository.getAnalyticsExportData();
+        return await analyticsRepository.getAnalyticsExportData();
 
       default:
         throw new CustomError("Invalid export type", 400);
@@ -266,3 +264,5 @@ export class ExportService {
     }));
   }
 }
+
+export const exportService = new ExportService();

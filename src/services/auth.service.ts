@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import { AuthRepository } from "../repositories/auth.repository";
+import { authRepository } from "../repositories/auth.repository";
 import { generateToken, generateRandomToken, JWTPayload } from "../utils/jwt";
 import { sendVerificationEmail, sendPasswordResetEmail } from "../utils/email";
 import { User } from "../types";
@@ -7,10 +7,8 @@ import { CustomError } from "../middleware/errorHandler";
 import { TokenType } from "../enums";
 
 export class AuthService {
-  private authRepository: AuthRepository;
-
   constructor() {
-    this.authRepository = new AuthRepository();
+    // No need to initialize repository - using singleton
   }
 
   async register(userData: {
@@ -20,7 +18,7 @@ export class AuthService {
     country: string;
     interests: string[];
   }): Promise<{ user: User; token: string }> {
-    const existingUser = await this.authRepository.findUserByEmail(
+    const existingUser = await authRepository.findUserByEmail(
       userData.email
     );
     if (existingUser) {
@@ -28,13 +26,13 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(userData.password, 12);
-    const user = await this.authRepository.createUser({
+    const user = await authRepository.createUser({
       ...userData,
       password: hashedPassword,
     });
 
     const verificationToken = generateRandomToken();
-    await this.authRepository.createToken({
+    await authRepository.createToken({
       token: verificationToken,
       type: TokenType.EMAIL_VERIFICATION,
       userId: user.id,
@@ -76,7 +74,7 @@ export class AuthService {
     email: string,
     password: string
   ): Promise<{ user: User; token: string }> {
-    const user = await this.authRepository.findUserByEmail(email);
+    const user = await authRepository.findUserByEmail(email);
     if (!user) {
       throw new CustomError("Invalid credentials", 401);
     }
@@ -86,7 +84,7 @@ export class AuthService {
       throw new CustomError("Invalid credentials", 401);
     }
 
-    await this.authRepository.updateLastActive(user.id);
+    await authRepository.updateLastActive(user.id);
 
     const jwtPayload: JWTPayload = {
       userId: user.id,
@@ -118,13 +116,13 @@ export class AuthService {
   }
 
   async forgotPassword(email: string): Promise<{ message: string }> {
-    const user = await this.authRepository.findUserByEmail(email);
+    const user = await authRepository.findUserByEmail(email);
     if (!user) {
       return { message: "If the email exists, a reset link has been sent" };
     }
 
     const resetToken = generateRandomToken();
-    await this.authRepository.createToken({
+    await authRepository.createToken({
       token: resetToken,
       type: TokenType.PASSWORD_RESET,
       userId: user.id,
@@ -144,7 +142,7 @@ export class AuthService {
     token: string,
     newPassword: string
   ): Promise<{ message: string }> {
-    const tokenRecord = await this.authRepository.findTokenByValue(
+    const tokenRecord = await authRepository.findTokenByValue(
       token,
       TokenType.PASSWORD_RESET
     );
@@ -153,11 +151,11 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 12);
-    await this.authRepository.updateUser(tokenRecord.userId, {
+    await authRepository.updateUser(tokenRecord.userId, {
       password: hashedPassword,
     });
 
-    await this.authRepository.markTokenAsUsed(tokenRecord.id);
+    await authRepository.markTokenAsUsed(tokenRecord.id);
 
     return { message: "Password reset successfully" };
   }
@@ -165,7 +163,7 @@ export class AuthService {
   async verifyEmail(
     token: string
   ): Promise<{ message: string; verified: boolean }> {
-    const tokenRecord = await this.authRepository.findTokenByValue(
+    const tokenRecord = await authRepository.findTokenByValue(
       token,
       TokenType.EMAIL_VERIFICATION
     );
@@ -176,12 +174,14 @@ export class AuthService {
       };
     }
 
-    await this.authRepository.updateUser(tokenRecord.userId, {
+    await authRepository.updateUser(tokenRecord.userId, {
       verified: true,
     });
 
-    await this.authRepository.markTokenAsUsed(tokenRecord.id);
+    await authRepository.markTokenAsUsed(tokenRecord.id);
 
     return { message: "Email verified successfully", verified: true };
   }
 }
+
+export const authService = new AuthService();
