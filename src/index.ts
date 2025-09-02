@@ -11,6 +11,8 @@ import authRoutes from "./routes/auth";
 import userRoutes from "./routes/users";
 import adminRoutes from "./routes/admin";
 import opportunityRoutes from "./routes/opportunities";
+import chatRoutes from "./routes/chat";
+
 import crawlerRoutes from "./routes/crawler";
 import { globalErrorHandler, notFound } from "./middleware/errorHandler";
 import { prisma } from "./database/prisma";
@@ -49,6 +51,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/opportunities", opportunityRoutes);
 app.use("/api/crawler", crawlerRoutes);
+app.use("/api/chat", chatRoutes);
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
