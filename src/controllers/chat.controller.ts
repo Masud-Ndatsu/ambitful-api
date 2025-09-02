@@ -70,6 +70,30 @@ export class ChatController {
     }
   );
 
+  getMessagesByConversationId = asyncHandler(
+    async (
+      req: AuthRequest,
+      res: Response,
+      next: NextFunction
+    ): Promise<void> => {
+      const userId = req.user!.userId;
+      const { id } = req.params;
+      const { page = 1, limit = 50 } = req.query as any;
+
+      const pagination = {
+        page: parseInt(page as string, 10),
+        limit: parseInt(limit as string, 10),
+      };
+
+      const result = await this.chatService.getMessagesByConversationId(
+        id,
+        userId,
+        pagination
+      );
+      SuccessResponse(res, result, "Messages retrieved successfully");
+    }
+  );
+
   deleteConversation = asyncHandler(
     async (
       req: AuthRequest,
@@ -113,7 +137,11 @@ export class ChatController {
       const recommendations =
         await this.chatService.generateOpportunityRecommendations(userId);
 
-      SuccessResponse(res, { recommendations }, "Opportunity recommendations generated successfully");
+      SuccessResponse(
+        res,
+        { recommendations },
+        "Opportunity recommendations generated successfully"
+      );
     }
   );
 }
