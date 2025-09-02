@@ -7,10 +7,14 @@ export interface PaginationOptions {
 }
 
 export class ChatRepository {
-  async createConversation(userId: string): Promise<ChatConversation> {
+  async createConversation(
+    userId: string,
+    title?: string
+  ): Promise<ChatConversation> {
     return await prisma.chatConversation.create({
       data: {
         userId,
+        title,
       },
     });
   }
@@ -59,7 +63,7 @@ export class ChatRepository {
             orderBy: {
               timestamp: "desc",
             },
-            take: 1, // Only get the last message for conversation list
+            take: 5, // Only get the last message for conversation list
           },
         },
       }),
@@ -152,6 +156,50 @@ export class ChatRepository {
       },
       take: limit,
     });
+  }
+
+  async getChatMessages(
+    conversationId: string,
+    userId: string,
+    pagination: PaginationOptions
+  ): Promise<{
+    messages: ChatMessage[];
+    total: number;
+  }> {
+    const { page, limit } = pagination;
+    const skip = (page - 1) * limit;
+
+    // Verify conversation belongs to user
+    const conversation = await prisma.chatConversation.findFirst({
+      where: {
+        id: conversationId,
+        userId,
+      },
+    });
+
+    if (!conversation) {
+      return { messages: [], total: 0 };
+    }
+
+    const [messages, total] = await Promise.all([
+      prisma.chatMessage.findMany({
+        where: {
+          conversationId,
+        },
+        skip,
+        take: limit,
+        orderBy: {
+          timestamp: "asc",
+        },
+      }),
+      prisma.chatMessage.count({
+        where: {
+          conversationId,
+        },
+      }),
+    ]);
+
+    return { messages, total };
   }
 
   async getConversationContext(

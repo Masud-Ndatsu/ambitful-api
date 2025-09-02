@@ -397,7 +397,7 @@ export class OpportunityRepository {
       ]);
 
       return {
-        types: types.map((t) => t.type.toLowerCase()),
+        types: [...new Set(types.map((t) => t.type.toLowerCase()))],
         locations: locations.map((l) => l.location),
         categories: categories.map((c) => c.category),
       };

@@ -80,7 +80,8 @@ export interface AIDraft {
 export interface ChatConversation {
   id: string;
   userId: string;
-  messages: ChatMessage[];
+  title: string;
+  messages?: ChatMessage[];
   createdAt: string;
   updatedAt: string;
 }

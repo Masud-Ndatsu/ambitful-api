@@ -1,19 +1,23 @@
-import { Router } from 'express';
-import { ChatController } from '../controllers/chat.controller';
-import { validateBody, validateParams, validateQuery } from '../middleware/validation';
-import { authenticateToken } from '../middleware/auth';
+import { Router } from "express";
+import { ChatController } from "../controllers/chat.controller";
+import {
+  validateBody,
+  validateParams,
+  validateQuery,
+} from "../middleware/validation";
+import { authenticateToken } from "../middleware/auth";
 import {
   sendMessageSchema,
   conversationIdParamsSchema,
-  conversationsQuerySchema
-} from '../validators/chat';
+  conversationsQuerySchema,
+} from "../validators/chat";
 
 const router = Router();
 const chatController = new ChatController();
 
 // Send message to AI assistant
 router.post(
-  '/message',
+  "/message",
   authenticateToken,
   validateBody(sendMessageSchema),
   chatController.sendMessage
@@ -21,7 +25,7 @@ router.post(
 
 // Get user's conversations
 router.get(
-  '/conversations',
+  "/conversations",
   authenticateToken,
   validateQuery(conversationsQuerySchema),
   chatController.getConversations
@@ -29,30 +33,34 @@ router.get(
 
 // Get specific conversation
 router.get(
-  '/conversations/:id',
+  "/conversations/:id",
   authenticateToken,
   validateParams(conversationIdParamsSchema),
   chatController.getConversationById
 );
 
+// Get messages by conversation ID
+router.get(
+  "/conversations/:id/messages",
+  authenticateToken,
+  validateParams(conversationIdParamsSchema),
+  chatController.getMessagesByConversationId
+);
+
 // Delete conversation
 router.delete(
-  '/conversations/:id',
+  "/conversations/:id",
   authenticateToken,
   validateParams(conversationIdParamsSchema),
   chatController.deleteConversation
 );
 
 // Get personalized career advice
-router.get(
-  '/career-advice',
-  authenticateToken,
-  chatController.getCareerAdvice
-);
+router.get("/career-advice", authenticateToken, chatController.getCareerAdvice);
 
 // Get opportunity recommendations
 router.get(
-  '/opportunity-recommendations',
+  "/opportunity-recommendations",
   authenticateToken,
   chatController.getOpportunityRecommendations
 );
