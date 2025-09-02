@@ -1058,3 +1058,5 @@ export class OpportunityRepository {
     }
   }
 }
+
+export const opportunityRepository = new OpportunityRepository();

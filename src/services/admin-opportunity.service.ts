@@ -1,5 +1,5 @@
 import {
-  OpportunityRepository,
+  opportunityRepository,
   OpportunityFilters,
   PaginationOptions,
 } from "../repositories/opportunity.repository";
@@ -14,10 +14,8 @@ import { OpportunityEvents } from "../events/opportunity.event";
 import { OPPORTUNITY_EVENTS } from "../enums";
 
 export class AdminOpportunityService {
-  private opportunityRepository: OpportunityRepository;
-
   constructor() {
-    this.opportunityRepository = new OpportunityRepository();
+    // No need to initialize repository - using singleton
   }
 
   async getAdminOpportunities(
@@ -31,11 +29,11 @@ export class AdminOpportunityService {
     stats: OpportunityStats;
   }> {
     const [result, stats] = await Promise.all([
-      this.opportunityRepository.findAdminOpportunitiesWithPagination(
+      opportunityRepository.findAdminOpportunitiesWithPagination(
         filters,
         pagination
       ),
-      this.opportunityRepository.getOpportunityStats(),
+      opportunityRepository.getOpportunityStats(),
     ]);
     return {
       opportunities: result.opportunities.map((opp) =>
@@ -69,7 +67,7 @@ export class AdminOpportunityService {
     };
 
     const existingOpportunity =
-      await this.opportunityRepository.findOpportunityByTitleAndDeadline(
+      await opportunityRepository.findOpportunityByTitleAndDeadline(
         processedData.title,
         processedData.deadline
       );
@@ -80,7 +78,7 @@ export class AdminOpportunityService {
       );
     }
 
-    const opportunity = await this.opportunityRepository.createOpportunity(
+    const opportunity = await opportunityRepository.createOpportunity(
       processedData
     );
 
@@ -95,25 +93,25 @@ export class AdminOpportunityService {
   async updateOpportunity(id: string, updateData: any): Promise<Opportunity> {
     // Check if opportunity exists
     const existingOpportunity =
-      await this.opportunityRepository.findOpportunityById(id);
+      await opportunityRepository.findOpportunityById(id);
     if (!existingOpportunity) {
       throw new CustomError("Opportunity not found", 404);
     }
 
     const updatedOpportunity =
-      await this.opportunityRepository.updateOpportunity(id, updateData);
+      await opportunityRepository.updateOpportunity(id, updateData);
     return this.formatOpportunity(updatedOpportunity);
   }
 
   async deleteOpportunity(id: string): Promise<{ message: string }> {
-    const opportunity = await this.opportunityRepository.findOpportunityById(
+    const opportunity = await opportunityRepository.findOpportunityById(
       id
     );
     if (!opportunity) {
       throw new CustomError("Opportunity not found", 404);
     }
 
-    await this.opportunityRepository.deleteOpportunity(id);
+    await opportunityRepository.deleteOpportunity(id);
     return { message: "Opportunity deleted successfully" };
   }
 
@@ -121,7 +119,7 @@ export class AdminOpportunityService {
     ids: string[],
     action: "publish" | "archive" | "delete"
   ): Promise<{ message: string; affected: number }> {
-    const affected = await this.opportunityRepository.bulkUpdateOpportunities(
+    const affected = await opportunityRepository.bulkUpdateOpportunities(
       ids,
       action
     );
@@ -139,7 +137,7 @@ export class AdminOpportunityService {
   }
 
   async getOpportunityAnalytics(id: string): Promise<OpportunityAnalytics> {
-    const analytics = await this.opportunityRepository.getOpportunityAnalytics(
+    const analytics = await opportunityRepository.getOpportunityAnalytics(
       id
     );
 
@@ -193,3 +191,5 @@ export class AdminOpportunityService {
     };
   }
 }
+
+export const adminOpportunityService = new AdminOpportunityService();

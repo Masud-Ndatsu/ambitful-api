@@ -1,5 +1,5 @@
 import {
-  ChatRepository,
+  chatRepository,
   PaginationOptions,
 } from "../repositories/chat.repository";
 import { GeminiService, ChatContext, AIResponse } from "./gemini.service";
@@ -7,11 +7,9 @@ import { ChatConversation, ChatMessage } from "../types";
 import { CustomError } from "../middleware/errorHandler";
 
 export class ChatService {
-  private chatRepository: ChatRepository;
   private geminiService: GeminiService;
 
   constructor() {
-    this.chatRepository = new ChatRepository();
     this.geminiService = new GeminiService();
   }
 
@@ -31,7 +29,7 @@ export class ChatService {
       const title = message.slice(0, 100);
       // Create new conversation if none provided
       if (!currentConversationId) {
-        const newConversation = await this.chatRepository.createConversation(
+        const newConversation = await chatRepository.createConversation(
           userId,
           title
         );
@@ -39,7 +37,7 @@ export class ChatService {
       }
 
       // Verify conversation belongs to user
-      const conversation = await this.chatRepository.findConversationById(
+      const conversation = await chatRepository.findConversationById(
         currentConversationId,
         userId
       );
@@ -48,14 +46,14 @@ export class ChatService {
       }
 
       // Save user message
-      await this.chatRepository.addMessageToConversation(
+      await chatRepository.addMessageToConversation(
         currentConversationId,
         message,
         "user"
       );
 
       // Get conversation context for AI
-      const chatContext = await this.chatRepository.getConversationContext(
+      const chatContext = await chatRepository.getConversationContext(
         currentConversationId,
         userId
       );
@@ -82,7 +80,7 @@ export class ChatService {
       );
 
       // Save AI response
-      await this.chatRepository.addMessageToConversation(
+      await chatRepository.addMessageToConversation(
         currentConversationId,
         aiResponse.response,
         "bot",
@@ -118,7 +116,7 @@ export class ChatService {
     totalPages: number;
   }> {
     try {
-      const result = await this.chatRepository.findUserConversations(
+      const result = await chatRepository.findUserConversations(
         userId,
         pagination
       );
@@ -149,7 +147,7 @@ export class ChatService {
     userId: string
   ): Promise<ChatConversation> {
     try {
-      const conversation = await this.chatRepository.findConversationById(
+      const conversation = await chatRepository.findConversationById(
         conversationId,
         userId
       );
@@ -192,7 +190,7 @@ export class ChatService {
     totalPages: number;
   }> {
     try {
-      const result = await this.chatRepository.getChatMessages(
+      const result = await chatRepository.getChatMessages(
         conversationId,
         userId,
         pagination
@@ -226,7 +224,7 @@ export class ChatService {
     userId: string
   ): Promise<{ message: string }> {
     try {
-      const deleted = await this.chatRepository.deleteConversation(
+      const deleted = await chatRepository.deleteConversation(
         conversationId,
         userId
       );
@@ -248,7 +246,7 @@ export class ChatService {
   async generateCareerAdvice(userId: string, query?: string): Promise<string> {
     try {
       // Get user profile for personalized advice
-      const context = await this.chatRepository.getConversationContext(
+      const context = await chatRepository.getConversationContext(
         "temp",
         userId
       );
@@ -273,7 +271,7 @@ export class ChatService {
   async generateOpportunityRecommendations(userId: string): Promise<string> {
     try {
       // Get user profile for personalized recommendations
-      const context = await this.chatRepository.getConversationContext(
+      const context = await chatRepository.getConversationContext(
         "temp",
         userId
       );
@@ -297,3 +295,5 @@ export class ChatService {
     }
   }
 }
+
+export const chatService = new ChatService();

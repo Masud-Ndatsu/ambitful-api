@@ -269,3 +269,5 @@ export class AIDraftsRepository {
     return result.count;
   }
 }
+
+export const aiDraftsRepository = new AIDraftsRepository();

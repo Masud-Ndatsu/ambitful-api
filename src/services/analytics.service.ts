@@ -1,4 +1,4 @@
-import { AnalyticsRepository, VisitData, RegionData, OpportunityPerformance, UserEngagement } from '../repositories/analytics.repository';
+import { analyticsRepository, VisitData, RegionData, OpportunityPerformance, UserEngagement } from '../repositories/analytics.repository';
 import { ExportService, ExportOptions } from './export.service';
 import { CustomError } from '../middleware/errorHandler';
 
@@ -21,17 +21,15 @@ export interface UserAnalytics {
 }
 
 export class AnalyticsService {
-  private analyticsRepository: AnalyticsRepository;
   private exportService: ExportService;
 
   constructor() {
-    this.analyticsRepository = new AnalyticsRepository();
     this.exportService = new ExportService();
   }
 
   async getOverviewAnalytics(period: '7d' | '30d' | '90d' = '30d'): Promise<OverviewAnalytics> {
     try {
-      return await this.analyticsRepository.getOverviewAnalytics(period);
+      return await analyticsRepository.getOverviewAnalytics(period);
     } catch (error) {
       console.error('Error getting overview analytics:', error);
       throw new CustomError('Failed to retrieve overview analytics', 500);
@@ -42,7 +40,7 @@ export class AnalyticsService {
     performance: OpportunityPerformance[];
   }> {
     try {
-      const performance = await this.analyticsRepository.getOpportunityPerformance();
+      const performance = await analyticsRepository.getOpportunityPerformance();
       return { performance };
     } catch (error) {
       console.error('Error getting opportunity performance:', error);
@@ -52,7 +50,7 @@ export class AnalyticsService {
 
   async getUserAnalytics(): Promise<UserAnalytics> {
     try {
-      return await this.analyticsRepository.getUserAnalytics();
+      return await analyticsRepository.getUserAnalytics();
     } catch (error) {
       console.error('Error getting user analytics:', error);
       throw new CustomError('Failed to retrieve user analytics', 500);
@@ -97,7 +95,7 @@ export class AnalyticsService {
     try {
       const [overview, performance, userAnalytics] = await Promise.all([
         this.getOverviewAnalytics('30d'),
-        this.analyticsRepository.getOpportunityPerformance(),
+        analyticsRepository.getOpportunityPerformance(),
         this.getUserAnalytics()
       ]);
 
@@ -206,7 +204,7 @@ export class AnalyticsService {
     avgApplicationsPerOpportunity: number;
     topCategories: { category: string; count: number; }[];
   }> {
-    const performance = await this.analyticsRepository.getOpportunityPerformance();
+    const performance = await analyticsRepository.getOpportunityPerformance();
     
     // Mock data for opportunity counts by status
     const totalOpportunities = performance.length;
@@ -378,3 +376,5 @@ export class AnalyticsService {
     return `Analytics report for the last ${period}. Total visits: ${metrics.overview.totalVisits}, Active opportunities: ${metrics.overview.activeOpportunities}, Total users: ${metrics.users.totalUsers}. Overall performance shows ${metrics.overview.avgCTR}% average CTR with ${metrics.users.activeUsers} active users.`;
   }
 }
+
+export const analyticsService = new AnalyticsService();

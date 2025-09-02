@@ -4,8 +4,8 @@ import { GeminiService } from "../services/gemini.service";
 import { crawlerRepository } from "../repositories/crawler.repository";
 import { ParsedOpportunity } from "../types";
 import { CustomError } from "../middleware/errorHandler";
-import { OpportunityRepository } from "../repositories/opportunity.repository";
-import { AIDraftsRepository } from "../repositories/ai-drafts.repository";
+import { opportunityRepository } from "../repositories/opportunity.repository";
+import { aiDraftsRepository } from "../repositories/ai-drafts.repository";
 
 type CrawlerEventsTypes = {
   [CRAWLER_EVENTS.CONTENT_CRAWLED]: [
@@ -33,8 +33,6 @@ type CrawlerEventsTypes = {
 export const CrawlerEvents = new TypedEventEmitter<CrawlerEventsTypes>();
 
 const geminiService = new GeminiService();
-const opportunityRepository = new OpportunityRepository();
-const aiDraftsRepository = new AIDraftsRepository();
 
 // Priority determination logic
 function determinePriority(

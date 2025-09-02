@@ -1,5 +1,5 @@
 import {
-  UserRepository,
+  userRepository,
   UserFilters,
   PaginationOptions,
 } from "../repositories/user.repository";
@@ -8,14 +8,12 @@ import { CustomError } from "../middleware/errorHandler";
 import { UserRole } from "../enums";
 
 export class UserService {
-  private userRepository: UserRepository;
-
   constructor() {
-    this.userRepository = new UserRepository();
+    // No need to initialize repository - using singleton
   }
 
   async getUserProfile(userId: string): Promise<User> {
-    const user = await this.userRepository.findUserById(userId);
+    const user = await userRepository.findUserById(userId);
     if (!user) {
       throw new CustomError("User not found", 404);
     }
@@ -33,14 +31,14 @@ export class UserService {
       profilePicture?: string;
     }
   ): Promise<User> {
-    const existingUser = await this.userRepository.findUserById(userId);
+    const existingUser = await userRepository.findUserById(userId);
     if (!existingUser) {
       throw new CustomError("User not found", 404);
     }
 
     // Check if email is being updated and if it's already taken
     if (updateData.email && updateData.email !== existingUser.email) {
-      const emailExists = await this.userRepository.findUserByEmail(
+      const emailExists = await userRepository.findUserByEmail(
         updateData.email
       );
       if (emailExists) {
@@ -48,13 +46,13 @@ export class UserService {
       }
     }
 
-    const updatedUser = await this.userRepository.updateUser(
+    const updatedUser = await userRepository.updateUser(
       userId,
       updateData
     );
 
     // Log the activity
-    await this.userRepository.createUserActivity({
+    await userRepository.createUserActivity({
       userId,
       action: "PROFILE_UPDATE",
       description: "User updated their profile information",
@@ -64,18 +62,18 @@ export class UserService {
   }
 
   async getUserById(requesterId: string, targetUserId: string): Promise<User> {
-    const requester = await this.userRepository.findUserById(requesterId);
+    const requester = await userRepository.findUserById(requesterId);
     if (!requester) {
       throw new CustomError("Unauthorized", 401);
     }
 
-    const targetUser = await this.userRepository.findUserById(targetUserId);
+    const targetUser = await userRepository.findUserById(targetUserId);
     if (!targetUser) {
       throw new CustomError("User not found", 404);
     }
 
     // Log the activity
-    await this.userRepository.createUserActivity({
+    await userRepository.createUserActivity({
       userId: requesterId,
       action: "VIEW_USER",
       description: `Viewed user profile: ${targetUser.name}`,
@@ -85,12 +83,12 @@ export class UserService {
   }
 
   async deleteUser(userId: string): Promise<{ message: string }> {
-    const user = await this.userRepository.findUserById(userId);
+    const user = await userRepository.findUserById(userId);
     if (!user) {
       throw new CustomError("User not found", 404);
     }
 
-    await this.userRepository.deleteUser(userId);
+    await userRepository.deleteUser(userId);
 
     return { message: "User deleted successfully" };
   }
@@ -104,7 +102,7 @@ export class UserService {
     page: number;
     totalPages: number;
   }> {
-    const result = await this.userRepository.findUsersWithPagination(
+    const result = await userRepository.findUsersWithPagination(
       filters,
       pagination
     );
@@ -122,31 +120,31 @@ export class UserService {
     targetUserId: string,
     status: "active" | "inactive" | "suspended"
   ): Promise<User> {
-    const admin = await this.userRepository.findUserById(adminId);
+    const admin = await userRepository.findUserById(adminId);
     if (!admin || admin.role !== UserRole.ADMIN) {
       throw new CustomError("Unauthorized", 403);
     }
 
-    const targetUser = await this.userRepository.findUserById(targetUserId);
+    const targetUser = await userRepository.findUserById(targetUserId);
     if (!targetUser) {
       throw new CustomError("User not found", 404);
     }
 
     const statusEnum = status;
-    const updatedUser = await this.userRepository.updateUserStatus(
+    const updatedUser = await userRepository.updateUserStatus(
       targetUserId,
       statusEnum
     );
 
     // Log the admin activity
-    await this.userRepository.createUserActivity({
+    await userRepository.createUserActivity({
       userId: adminId,
       action: "USER_STATUS_UPDATE",
       description: `Updated user status to ${status} for user: ${targetUser.name}`,
     });
 
     // Log the user activity
-    await this.userRepository.createUserActivity({
+    await userRepository.createUserActivity({
       userId: targetUserId,
       action: "STATUS_CHANGED",
       description: `Status changed to ${status} by admin`,
@@ -159,17 +157,17 @@ export class UserService {
     adminId: string,
     targetUserId: string
   ): Promise<UserActivity[]> {
-    const admin = await this.userRepository.findUserById(adminId);
+    const admin = await userRepository.findUserById(adminId);
     if (!admin || admin.role !== UserRole.ADMIN) {
       throw new CustomError("Unauthorized", 403);
     }
 
-    const targetUser = await this.userRepository.findUserById(targetUserId);
+    const targetUser = await userRepository.findUserById(targetUserId);
     if (!targetUser) {
       throw new CustomError("User not found", 404);
     }
 
-    const activities = await this.userRepository.findUserActivities(
+    const activities = await userRepository.findUserActivities(
       targetUserId
     );
 
@@ -200,3 +198,5 @@ export class UserService {
     };
   }
 }
+
+export const userService = new UserService();

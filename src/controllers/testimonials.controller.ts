@@ -1,14 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
-import { TestimonialsService } from '../services/testimonials.service';
+import { testimonialsService } from '../services/testimonials.service';
 import { createTestimonialSchema, updateTestimonialSchema, testimonialsQuerySchema } from '../validators/testimonials';
 import { CustomError } from '../middleware/errorHandler';
 import { SuccessResponse } from '../utils/response';
 
 export class TestimonialsController {
-  private testimonialsService: TestimonialsService;
-
   constructor() {
-    this.testimonialsService = new TestimonialsService();
+    // No initialization needed - using singleton services
   }
 
   async getTestimonials(req: Request, res: Response, next: NextFunction) {
@@ -19,7 +17,7 @@ export class TestimonialsController {
       }
 
       const { page, limit, search } = value;
-      const result = await this.testimonialsService.getTestimonials(
+      const result = await testimonialsService.getTestimonials(
         { search },
         { page, limit }
       );
@@ -32,7 +30,7 @@ export class TestimonialsController {
   async getFeaturedTestimonials(req: Request, res: Response, next: NextFunction) {
     try {
       const limit = parseInt(req.query.limit as string) || 3;
-      const testimonials = await this.testimonialsService.getFeaturedTestimonials(limit);
+      const testimonials = await testimonialsService.getFeaturedTestimonials(limit);
       SuccessResponse(res, testimonials, 'Featured testimonials retrieved successfully');
     } catch (error) {
       next(error);
@@ -42,7 +40,7 @@ export class TestimonialsController {
   async getTestimonialById(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const testimonial = await this.testimonialsService.getTestimonialById(id);
+      const testimonial = await testimonialsService.getTestimonialById(id);
       
       if (!testimonial) {
         throw new CustomError('Testimonial not found', 404);
@@ -61,7 +59,7 @@ export class TestimonialsController {
         throw new CustomError(error.details[0].message, 400);
       }
 
-      const testimonial = await this.testimonialsService.createTestimonial(value);
+      const testimonial = await testimonialsService.createTestimonial(value);
       SuccessResponse(res, testimonial, 'Testimonial created successfully', 201);
     } catch (error) {
       next(error);
@@ -76,7 +74,7 @@ export class TestimonialsController {
         throw new CustomError(error.details[0].message, 400);
       }
 
-      const testimonial = await this.testimonialsService.updateTestimonial(id, value);
+      const testimonial = await testimonialsService.updateTestimonial(id, value);
       SuccessResponse(res, testimonial, 'Testimonial updated successfully');
     } catch (error) {
       next(error);
@@ -86,7 +84,7 @@ export class TestimonialsController {
   async deleteTestimonial(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      await this.testimonialsService.deleteTestimonial(id);
+      await testimonialsService.deleteTestimonial(id);
       SuccessResponse(res, null, 'Testimonial deleted successfully', 204);
     } catch (error) {
       next(error);
@@ -101,7 +99,7 @@ export class TestimonialsController {
         throw new CustomError('IDs array is required', 400);
       }
 
-      const result = await this.testimonialsService.bulkDeleteTestimonials(ids);
+      const result = await testimonialsService.bulkDeleteTestimonials(ids);
       SuccessResponse(res, result, 'Testimonials deleted successfully');
     } catch (error) {
       next(error);
@@ -110,7 +108,7 @@ export class TestimonialsController {
 
   async getTestimonialsStats(req: Request, res: Response, next: NextFunction) {
     try {
-      const stats = await this.testimonialsService.getTestimonialStats();
+      const stats = await testimonialsService.getTestimonialStats();
       SuccessResponse(res, stats, 'Testimonial statistics retrieved successfully');
     } catch (error) {
       next(error);

@@ -1,22 +1,18 @@
 import {
-  AIDraftsRepository,
+  aiDraftsRepository,
   AIDraftFilters,
   PaginationOptions,
 } from "../repositories/ai-drafts.repository";
-import { OpportunityRepository } from "../repositories/opportunity.repository";
+import { opportunityRepository } from "../repositories/opportunity.repository";
 import { ScrapingService } from "./scraping.service";
 import { AIDraft, Opportunity } from "../types";
 import { CustomError } from "../middleware/errorHandler";
 import { DraftStatus, OpportunityType, OpportunityStatus } from "../enums";
 
 export class AIDraftsService {
-  private draftsRepository: AIDraftsRepository;
-  private opportunityRepository: OpportunityRepository;
   private scrapingService: ScrapingService;
 
   constructor() {
-    this.draftsRepository = new AIDraftsRepository();
-    this.opportunityRepository = new OpportunityRepository();
     this.scrapingService = new ScrapingService();
   }
 
@@ -32,7 +28,7 @@ export class AIDraftsService {
     totalPages: number;
   }> {
     try {
-      const result = await this.draftsRepository.findDraftsWithPagination(
+      const result = await aiDraftsRepository.findDraftsWithPagination(
         filters,
         pagination
       );
@@ -108,7 +104,7 @@ export class AIDraftsService {
     edits?: any
   ): Promise<{ message: string; opportunity?: Opportunity }> {
     try {
-      const draft = await this.draftsRepository.findDraftById(draftId);
+      const draft = await aiDraftsRepository.findDraftById(draftId);
 
       if (!draft) {
         throw new CustomError("Draft not found", 404);
@@ -183,7 +179,7 @@ export class AIDraftsService {
       benefits: draft.extractedBenefits,
     };
 
-    const result = await this.draftsRepository.createOpportunityFromDraft(
+    const result = await aiDraftsRepository.createOpportunityFromDraft(
       draft.id,
       opportunityData
     );
@@ -221,7 +217,7 @@ export class AIDraftsService {
     draft: any,
     feedback?: string
   ): Promise<{ message: string }> {
-    await this.draftsRepository.updateDraftStatus(
+    await aiDraftsRepository.updateDraftStatus(
       draft.id,
       DraftStatus.REJECTED,
       feedback
@@ -255,10 +251,10 @@ export class AIDraftsService {
     };
 
     // Update the draft with edited data
-    await this.draftsRepository.updateDraftData(draft.id, updatedData);
+    await aiDraftsRepository.updateDraftData(draft.id, updatedData);
 
     // Create opportunity with edited data
-    const result = await this.draftsRepository.createOpportunityFromDraft(
+    const result = await aiDraftsRepository.createOpportunityFromDraft(
       draft.id,
       updatedData
     );
@@ -294,7 +290,7 @@ export class AIDraftsService {
 
   async getDraftById(draftId: string): Promise<AIDraft> {
     try {
-      const draft = await this.draftsRepository.findDraftById(draftId);
+      const draft = await aiDraftsRepository.findDraftById(draftId);
 
       if (!draft) {
         throw new CustomError("Draft not found", 404);
@@ -358,13 +354,13 @@ export class AIDraftsService {
 
   async deleteDraft(draftId: string): Promise<{ message: string }> {
     try {
-      const draft = await this.draftsRepository.findDraftById(draftId);
+      const draft = await aiDraftsRepository.findDraftById(draftId);
 
       if (!draft) {
         throw new CustomError("Draft not found", 404);
       }
 
-      await this.draftsRepository.deleteDraft(draftId);
+      await aiDraftsRepository.deleteDraft(draftId);
 
       return {
         message: "Draft deleted successfully",
@@ -386,7 +382,7 @@ export class AIDraftsService {
     byPriority: { high: number; medium: number; low: number };
   }> {
     try {
-      return await this.draftsRepository.getDraftStats();
+      return await aiDraftsRepository.getDraftStats();
     } catch (error) {
       console.error("Error getting draft stats:", error);
       throw new CustomError("Failed to retrieve draft statistics", 500);
@@ -417,7 +413,7 @@ export class AIDraftsService {
         };
       } else {
         // For bulk rejection, we can use the repository method
-        const processed = await this.draftsRepository.bulkUpdateDrafts(
+        const processed = await aiDraftsRepository.bulkUpdateDrafts(
           draftIds,
           "rejected"
         );
@@ -435,7 +431,7 @@ export class AIDraftsService {
 
   async getRecentDrafts(limit: number = 10): Promise<AIDraft[]> {
     try {
-      const drafts = await this.draftsRepository.findRecentDrafts(limit);
+      const drafts = await aiDraftsRepository.findRecentDrafts(limit);
 
       return drafts.map((draft) => {
         return {
@@ -530,7 +526,7 @@ export class AIDraftsService {
     draftId: string
   ): Promise<{ message: string; draft: AIDraft }> {
     try {
-      const draft = await this.draftsRepository.findDraftById(draftId);
+      const draft = await aiDraftsRepository.findDraftById(draftId);
 
       if (!draft) {
         throw new CustomError("Draft not found", 404);
@@ -557,7 +553,7 @@ export class AIDraftsService {
       // Use the first extracted opportunity
 
       // Update the draft with new extracted data
-      const updatedDraft = await this.draftsRepository.updateDraftData(
+      const updatedDraft = await aiDraftsRepository.updateDraftData(
         draftId,
         {
           extractedEligibility: extractedData.eligibility || [],
@@ -629,13 +625,13 @@ export class AIDraftsService {
     priority: "high" | "medium" | "low"
   ): Promise<{ message: string }> {
     try {
-      const draft = await this.draftsRepository.findDraftById(draftId);
+      const draft = await aiDraftsRepository.findDraftById(draftId);
 
       if (!draft) {
         throw new CustomError("Draft not found", 404);
       }
 
-      await this.draftsRepository.updateDraftPriority(
+      await aiDraftsRepository.updateDraftPriority(
         draftId,
         priority
       );
@@ -656,7 +652,7 @@ export class AIDraftsService {
     draftIds: string[]
   ): Promise<{ message: string; deleted: number }> {
     try {
-      const deleted = await this.draftsRepository.bulkDeleteDrafts(draftIds);
+      const deleted = await aiDraftsRepository.bulkDeleteDrafts(draftIds);
 
       return {
         message: `Successfully deleted ${deleted} drafts`,
@@ -668,3 +664,5 @@ export class AIDraftsService {
     }
   }
 }
+
+export const aiDraftsService = new AIDraftsService();

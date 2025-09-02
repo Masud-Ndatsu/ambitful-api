@@ -1,12 +1,10 @@
-import { TestimonialsRepository, TestimonialFilters, PaginationOptions } from '../repositories/testimonials.repository';
+import { testimonialsRepository, TestimonialFilters, PaginationOptions } from '../repositories/testimonials.repository';
 import { Testimonial } from '../types';
 import { CustomError } from '../middleware/errorHandler';
 
 export class TestimonialsService {
-  private testimonialsRepository: TestimonialsRepository;
-
   constructor() {
-    this.testimonialsRepository = new TestimonialsRepository();
+    // No need to initialize repository - using singleton
   }
 
   async getTestimonials(
@@ -19,7 +17,7 @@ export class TestimonialsService {
     totalPages: number;
   }> {
     try {
-      const result = await this.testimonialsRepository.findTestimonialsWithPagination(filters, pagination);
+      const result = await testimonialsRepository.findTestimonialsWithPagination(filters, pagination);
       
       const formattedTestimonials: Testimonial[] = result.testimonials.map(testimonial => ({
         id: testimonial.id,
@@ -47,7 +45,7 @@ export class TestimonialsService {
 
   async getAllTestimonials(): Promise<Testimonial[]> {
     try {
-      const testimonials = await this.testimonialsRepository.findAllTestimonials();
+      const testimonials = await testimonialsRepository.findAllTestimonials();
       
       return testimonials.map(testimonial => ({
         id: testimonial.id,
@@ -68,7 +66,7 @@ export class TestimonialsService {
 
   async getTestimonialById(id: string): Promise<Testimonial> {
     try {
-      const testimonial = await this.testimonialsRepository.findTestimonialById(id);
+      const testimonial = await testimonialsRepository.findTestimonialById(id);
       
       if (!testimonial) {
         throw new CustomError('Testimonial not found', 404);
@@ -108,7 +106,7 @@ export class TestimonialsService {
         throw new CustomError('Invalid testimonial data', 400);
       }
 
-      const createdTestimonial = await this.testimonialsRepository.createTestimonial(testimonialData);
+      const createdTestimonial = await testimonialsRepository.createTestimonial(testimonialData);
 
       return {
         id: createdTestimonial.id,
@@ -143,12 +141,12 @@ export class TestimonialsService {
   ): Promise<Testimonial> {
     try {
       // Check if testimonial exists
-      const existingTestimonial = await this.testimonialsRepository.findTestimonialById(id);
+      const existingTestimonial = await testimonialsRepository.findTestimonialById(id);
       if (!existingTestimonial) {
         throw new CustomError('Testimonial not found', 404);
       }
 
-      const updatedTestimonial = await this.testimonialsRepository.updateTestimonial(id, updateData);
+      const updatedTestimonial = await testimonialsRepository.updateTestimonial(id, updateData);
 
       return {
         id: updatedTestimonial.id,
@@ -172,12 +170,12 @@ export class TestimonialsService {
 
   async deleteTestimonial(id: string): Promise<{ message: string }> {
     try {
-      const testimonial = await this.testimonialsRepository.findTestimonialById(id);
+      const testimonial = await testimonialsRepository.findTestimonialById(id);
       if (!testimonial) {
         throw new CustomError('Testimonial not found', 404);
       }
 
-      await this.testimonialsRepository.deleteTestimonial(id);
+      await testimonialsRepository.deleteTestimonial(id);
       
       return { message: 'Testimonial deleted successfully' };
     } catch (error) {
@@ -196,7 +194,7 @@ export class TestimonialsService {
     topLocations: { location: string; count: number; }[];
   }> {
     try {
-      return await this.testimonialsRepository.getTestimonialStats();
+      return await testimonialsRepository.getTestimonialStats();
     } catch (error) {
       console.error('Error getting testimonial stats:', error);
       throw new CustomError('Failed to retrieve testimonial statistics', 500);
@@ -209,7 +207,7 @@ export class TestimonialsService {
         return [];
       }
 
-      const testimonials = await this.testimonialsRepository.searchTestimonials(query.trim());
+      const testimonials = await testimonialsRepository.searchTestimonials(query.trim());
       
       return testimonials.map(testimonial => ({
         id: testimonial.id,
@@ -230,7 +228,7 @@ export class TestimonialsService {
 
   async getTestimonialsByLocation(location: string): Promise<Testimonial[]> {
     try {
-      const testimonials = await this.testimonialsRepository.getTestimonialsByLocation(location);
+      const testimonials = await testimonialsRepository.getTestimonialsByLocation(location);
       
       return testimonials.map(testimonial => ({
         id: testimonial.id,
@@ -255,7 +253,7 @@ export class TestimonialsService {
         throw new CustomError('No testimonial IDs provided', 400);
       }
 
-      const deleted = await this.testimonialsRepository.bulkDeleteTestimonials(ids);
+      const deleted = await testimonialsRepository.bulkDeleteTestimonials(ids);
       
       return {
         message: `Successfully deleted ${deleted} testimonials`,
@@ -299,7 +297,7 @@ export class TestimonialsService {
 
   async getFeaturedTestimonials(limit: number = 6): Promise<Testimonial[]> {
     try {
-      const testimonials = await this.testimonialsRepository.getRecentTestimonials(limit);
+      const testimonials = await testimonialsRepository.getRecentTestimonials(limit);
       
       return testimonials.map(testimonial => ({
         id: testimonial.id,
@@ -318,3 +316,5 @@ export class TestimonialsService {
     }
   }
 }
+
+export const testimonialsService = new TestimonialsService();

@@ -1,26 +1,16 @@
 import { Request, Response, NextFunction } from "express";
-import { UserService } from "../services/user.service";
-import { AdminOpportunityService } from "../services/admin-opportunity.service";
-import { AIDraftsService } from "../services/ai-drafts.service";
-import { AnalyticsService } from "../services/analytics.service";
-import { TestimonialsService } from "../services/testimonials.service";
+import { userService } from "../services/user.service";
+import { adminOpportunityService } from "../services/admin-opportunity.service";
+import { aiDraftsService } from "../services/ai-drafts.service";
+import { analyticsService } from "../services/analytics.service";
+import { testimonialsService } from "../services/testimonials.service";
 import { asyncHandler } from "../middleware/errorHandler";
 import { AuthRequest } from "../middleware/auth";
 import { SuccessResponse } from "../utils/response";
 
 export class AdminController {
-  private userService: UserService;
-  private adminOpportunityService: AdminOpportunityService;
-  private aiDraftsService: AIDraftsService;
-  private analyticsService: AnalyticsService;
-  private testimonialsService: TestimonialsService;
-
   constructor() {
-    this.userService = new UserService();
-    this.adminOpportunityService = new AdminOpportunityService();
-    this.aiDraftsService = new AIDraftsService();
-    this.analyticsService = new AnalyticsService();
-    this.testimonialsService = new TestimonialsService();
+    // No initialization needed - using singleton services
   }
 
   getUsers = asyncHandler(
@@ -48,7 +38,7 @@ export class AdminController {
         limit: parseInt(limit as string, 10),
       };
 
-      const result = await this.userService.getUsersWithPagination(
+      const result = await userService.getUsersWithPagination(
         filters,
         pagination
       );
@@ -66,7 +56,7 @@ export class AdminController {
       const targetUserId = req.params.id;
       const { status } = req.body;
 
-      const user = await this.userService.updateUserStatus(
+      const user = await userService.updateUserStatus(
         adminId,
         targetUserId,
         status
@@ -84,7 +74,7 @@ export class AdminController {
       const adminId = req.user!.userId;
       const targetUserId = req.params.id;
 
-      const activities = await this.userService.getUserActivity(
+      const activities = await userService.getUserActivity(
         adminId,
         targetUserId
       );
@@ -118,7 +108,7 @@ export class AdminController {
         limit: parseInt(limit as string, 10),
       };
 
-      const result = await this.adminOpportunityService.getAdminOpportunities(
+      const result = await adminOpportunityService.getAdminOpportunities(
         filters,
         pagination
       );
@@ -133,7 +123,7 @@ export class AdminController {
       next: NextFunction
     ): Promise<void> => {
       const opportunityData = req.body;
-      const opportunity = await this.adminOpportunityService.createOpportunity(
+      const opportunity = await adminOpportunityService.createOpportunity(
         opportunityData
       );
       SuccessResponse(
@@ -153,7 +143,7 @@ export class AdminController {
     ): Promise<void> => {
       const { id } = req.params;
       const updateData = req.body;
-      const opportunity = await this.adminOpportunityService.updateOpportunity(
+      const opportunity = await adminOpportunityService.updateOpportunity(
         id,
         updateData
       );
@@ -168,7 +158,7 @@ export class AdminController {
       next: NextFunction
     ): Promise<void> => {
       const { id } = req.params;
-      const result = await this.adminOpportunityService.deleteOpportunity(id);
+      const result = await adminOpportunityService.deleteOpportunity(id);
       SuccessResponse(res, result, "Opportunity deleted successfully");
     }
   );
@@ -180,7 +170,7 @@ export class AdminController {
       next: NextFunction
     ): Promise<void> => {
       const { ids, action } = req.body;
-      const result = await this.adminOpportunityService.bulkAction(ids, action);
+      const result = await adminOpportunityService.bulkAction(ids, action);
       SuccessResponse(res, result, "Bulk action completed successfully");
     }
   );
@@ -193,7 +183,7 @@ export class AdminController {
     ): Promise<void> => {
       const { id } = req.params;
       const analytics =
-        await this.adminOpportunityService.getOpportunityAnalytics(id);
+        await adminOpportunityService.getOpportunityAnalytics(id);
       SuccessResponse(
         res,
         analytics,
@@ -221,7 +211,7 @@ export class AdminController {
         limit: parseInt(limit as string, 10),
       };
 
-      const result = await this.aiDraftsService.getDrafts(filters, pagination);
+      const result = await aiDraftsService.getDrafts(filters, pagination);
       SuccessResponse(res, result, "AI drafts retrieved successfully");
     }
   );
@@ -235,7 +225,7 @@ export class AdminController {
       const { id } = req.params;
       const { action, feedback, edits } = req.body;
 
-      const result = await this.aiDraftsService.reviewDraft(
+      const result = await aiDraftsService.reviewDraft(
         id,
         action,
         feedback,
@@ -251,7 +241,7 @@ export class AdminController {
       res: Response,
       next: NextFunction
     ): Promise<void> => {
-      const stats = await this.aiDraftsService.getDraftStats();
+      const stats = await aiDraftsService.getDraftStats();
       SuccessResponse(res, stats, "AI draft statistics retrieved successfully");
     }
   );
@@ -263,7 +253,7 @@ export class AdminController {
       next: NextFunction
     ): Promise<void> => {
       const { id } = req.params;
-      const draft = await this.aiDraftsService.getDraftById(id);
+      const draft = await aiDraftsService.getDraftById(id);
       SuccessResponse(res, draft, "AI draft retrieved successfully");
     }
   );
@@ -275,7 +265,7 @@ export class AdminController {
       next: NextFunction
     ): Promise<void> => {
       const { id } = req.params;
-      const result = await this.aiDraftsService.deleteDraft(id);
+      const result = await aiDraftsService.deleteDraft(id);
       SuccessResponse(res, result, "AI draft deleted successfully");
     }
   );
@@ -287,7 +277,7 @@ export class AdminController {
       next: NextFunction
     ): Promise<void> => {
       const { ids, action } = req.body;
-      const result = await this.aiDraftsService.bulkReviewDrafts(ids, action);
+      const result = await aiDraftsService.bulkReviewDrafts(ids, action);
       SuccessResponse(
         res,
         result,
@@ -304,7 +294,7 @@ export class AdminController {
       next: NextFunction
     ): Promise<void> => {
       const { period = "30d" } = req.query;
-      const analytics = await this.analyticsService.getOverviewAnalytics(
+      const analytics = await analyticsService.getOverviewAnalytics(
         period as any
       );
       SuccessResponse(
@@ -322,7 +312,7 @@ export class AdminController {
       next: NextFunction
     ): Promise<void> => {
       const performance =
-        await this.analyticsService.getOpportunityPerformance();
+        await analyticsService.getOpportunityPerformance();
       SuccessResponse(
         res,
         performance,
@@ -337,7 +327,7 @@ export class AdminController {
       res: Response,
       next: NextFunction
     ): Promise<void> => {
-      const userAnalytics = await this.analyticsService.getUserAnalytics();
+      const userAnalytics = await analyticsService.getUserAnalytics();
       SuccessResponse(
         res,
         userAnalytics,
@@ -362,7 +352,7 @@ export class AdminController {
         endDate: endDate as string | undefined,
       };
 
-      const result = await this.analyticsService.exportAnalyticsData(
+      const result = await analyticsService.exportAnalyticsData(
         exportOptions
       );
 
@@ -381,7 +371,7 @@ export class AdminController {
       res: Response,
       next: NextFunction
     ): Promise<void> => {
-      const summary = await this.analyticsService.getDashboardSummary();
+      const summary = await analyticsService.getDashboardSummary();
       SuccessResponse(res, summary, "Dashboard summary retrieved successfully");
     }
   );
@@ -393,7 +383,7 @@ export class AdminController {
       next: NextFunction
     ): Promise<void> => {
       const { period = "30d" } = req.query;
-      const metrics = await this.analyticsService.getDetailedMetrics(
+      const metrics = await analyticsService.getDetailedMetrics(
         period as any
       );
       SuccessResponse(res, metrics, "Detailed metrics retrieved successfully");
@@ -406,7 +396,7 @@ export class AdminController {
       res: Response,
       next: NextFunction
     ): Promise<void> => {
-      const realtimeData = await this.analyticsService.getRealtimeMetrics();
+      const realtimeData = await analyticsService.getRealtimeMetrics();
       SuccessResponse(
         res,
         realtimeData,
@@ -422,7 +412,7 @@ export class AdminController {
       next: NextFunction
     ): Promise<void> => {
       const { period = "30d", includeCharts = false } = req.query;
-      const report = await this.analyticsService.generateAnalyticsReport(
+      const report = await analyticsService.generateAnalyticsReport(
         period as any,
         includeCharts === "true"
       );
@@ -438,7 +428,7 @@ export class AdminController {
       next: NextFunction
     ): Promise<void> => {
       const { page = 1, limit = 10, search } = req.query as any;
-      const result = await this.testimonialsService.getTestimonials(
+      const result = await testimonialsService.getTestimonials(
         { search },
         { page: parseInt(page), limit: parseInt(limit) }
       );
@@ -452,7 +442,7 @@ export class AdminController {
       res: Response,
       next: NextFunction
     ): Promise<void> => {
-      const testimonial = await this.testimonialsService.createTestimonial(
+      const testimonial = await testimonialsService.createTestimonial(
         req.body
       );
       SuccessResponse(
@@ -471,7 +461,7 @@ export class AdminController {
       next: NextFunction
     ): Promise<void> => {
       const { id } = req.params;
-      const testimonial = await this.testimonialsService.updateTestimonial(
+      const testimonial = await testimonialsService.updateTestimonial(
         id,
         req.body
       );
@@ -486,7 +476,7 @@ export class AdminController {
       next: NextFunction
     ): Promise<void> => {
       const { id } = req.params;
-      await this.testimonialsService.deleteTestimonial(id);
+      await testimonialsService.deleteTestimonial(id);
       res.status(204).send();
     }
   );
@@ -498,7 +488,7 @@ export class AdminController {
       next: NextFunction
     ): Promise<void> => {
       const { ids } = req.body;
-      const result = await this.testimonialsService.bulkDeleteTestimonials(ids);
+      const result = await testimonialsService.bulkDeleteTestimonials(ids);
       SuccessResponse(res, result, "Testimonials bulk deleted successfully");
     }
   );
@@ -509,7 +499,7 @@ export class AdminController {
       res: Response,
       next: NextFunction
     ): Promise<void> => {
-      const stats = await this.testimonialsService.getTestimonialStats();
+      const stats = await testimonialsService.getTestimonialStats();
       SuccessResponse(
         res,
         stats,
@@ -526,7 +516,7 @@ export class AdminController {
       next: NextFunction
     ): Promise<void> => {
       const { id } = req.params;
-      const result = await this.aiDraftsService.regenerateDraft(id);
+      const result = await aiDraftsService.regenerateDraft(id);
       SuccessResponse(res, result, "Draft regenerated successfully");
     }
   );
@@ -539,7 +529,7 @@ export class AdminController {
     ): Promise<void> => {
       const { id } = req.params;
       const { priority } = req.body;
-      const result = await this.aiDraftsService.updateDraftPriority(
+      const result = await aiDraftsService.updateDraftPriority(
         id,
         priority
       );
@@ -554,7 +544,7 @@ export class AdminController {
       next: NextFunction
     ): Promise<void> => {
       const { draftIds } = req.body;
-      const result = await this.aiDraftsService.bulkDeleteDrafts(draftIds);
+      const result = await aiDraftsService.bulkDeleteDrafts(draftIds);
       SuccessResponse(res, result, "Drafts deleted successfully");
     }
   );

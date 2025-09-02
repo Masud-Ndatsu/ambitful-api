@@ -1,13 +1,11 @@
 import { Request, Response, NextFunction } from "express";
-import { OpportunityService } from "../services/opportunity.service";
+import { opportunityService } from "../services/opportunity.service";
 import { asyncHandler } from "../middleware/errorHandler";
 import { SuccessResponse } from "../utils/response";
 
 export class OpportunityController {
-  private opportunityService: OpportunityService;
-
   constructor() {
-    this.opportunityService = new OpportunityService();
+    // No initialization needed - using singleton services
   }
 
   getOpportunities = asyncHandler(
@@ -37,7 +35,7 @@ export class OpportunityController {
         limit: parseInt(limit as string, 10),
       };
 
-      const result = await this.opportunityService.getOpportunities(
+      const result = await opportunityService.getOpportunities(
         filters,
         pagination
       );
@@ -48,7 +46,7 @@ export class OpportunityController {
   getOpportunityById = asyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       const { id } = req.params;
-      const opportunity = await this.opportunityService.getOpportunityById(id);
+      const opportunity = await opportunityService.getOpportunityById(id);
       SuccessResponse(res, opportunity, "Opportunity retrieved successfully");
     }
   );
@@ -56,7 +54,7 @@ export class OpportunityController {
   getFeaturedOpportunities = asyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       const opportunities =
-        await this.opportunityService.getFeaturedOpportunities();
+        await opportunityService.getFeaturedOpportunities();
       SuccessResponse(res, opportunities, "Featured opportunities retrieved successfully");
     }
   );
@@ -64,7 +62,7 @@ export class OpportunityController {
   getTrendingOpportunities = asyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       const opportunities =
-        await this.opportunityService.getTrendingOpportunities();
+        await opportunityService.getTrendingOpportunities();
       SuccessResponse(res, opportunities, "Trending opportunities retrieved successfully");
     }
   );
@@ -73,7 +71,7 @@ export class OpportunityController {
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       const { id } = req.params;
       const opportunities =
-        await this.opportunityService.getSimilarOpportunities(id);
+        await opportunityService.getSimilarOpportunities(id);
       SuccessResponse(res, opportunities, "Similar opportunities retrieved successfully");
     }
   );
@@ -83,7 +81,7 @@ export class OpportunityController {
     async (req: any, res: Response, next: NextFunction): Promise<void> => {
       const userId = req.user!.userId;
       const { id } = req.params;
-      const result = await this.opportunityService.saveOpportunity(userId, id);
+      const result = await opportunityService.saveOpportunity(userId, id);
       SuccessResponse(res, result, "Opportunity saved successfully");
     }
   );
@@ -92,7 +90,7 @@ export class OpportunityController {
     async (req: any, res: Response, next: NextFunction): Promise<void> => {
       const userId = req.user!.userId;
       const { id } = req.params;
-      const result = await this.opportunityService.unsaveOpportunity(userId, id);
+      const result = await opportunityService.unsaveOpportunity(userId, id);
       SuccessResponse(res, result, "Opportunity unsaved successfully");
     }
   );
@@ -107,7 +105,7 @@ export class OpportunityController {
         limit: parseInt(limit as string, 10)
       };
 
-      const result = await this.opportunityService.getSavedOpportunities(userId, pagination);
+      const result = await opportunityService.getSavedOpportunities(userId, pagination);
       SuccessResponse(res, result, "Saved opportunities retrieved successfully");
     }
   );
@@ -118,7 +116,7 @@ export class OpportunityController {
       const { id } = req.params;
       const { applicationData } = req.body;
 
-      const result = await this.opportunityService.applyToOpportunity(
+      const result = await opportunityService.applyToOpportunity(
         userId,
         id,
         applicationData
@@ -130,7 +128,7 @@ export class OpportunityController {
   getUserApplications = asyncHandler(
     async (req: any, res: Response, next: NextFunction): Promise<void> => {
       const userId = req.user!.userId;
-      const applications = await this.opportunityService.getUserApplications(userId);
+      const applications = await opportunityService.getUserApplications(userId);
       SuccessResponse(res, { applications }, "User applications retrieved successfully");
     }
   );
@@ -141,7 +139,7 @@ export class OpportunityController {
       const { id } = req.params;
       const { platform } = req.body;
 
-      const result = await this.opportunityService.shareOpportunity(userId, id, platform);
+      const result = await opportunityService.shareOpportunity(userId, id, platform);
       SuccessResponse(res, result, "Opportunity shared successfully");
     }
   );
@@ -151,7 +149,7 @@ export class OpportunityController {
       const userId = req.user!.userId;
       const { id } = req.params;
 
-      const result = await this.opportunityService.recordOpportunityView(userId, id);
+      const result = await opportunityService.recordOpportunityView(userId, id);
       SuccessResponse(res, result, "Opportunity view recorded successfully");
     }
   );

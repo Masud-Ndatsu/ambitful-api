@@ -1,5 +1,5 @@
 import {
-  OpportunityRepository,
+  opportunityRepository,
   OpportunityFilters,
   PaginationOptions,
 } from "../repositories/opportunity.repository";
@@ -7,10 +7,8 @@ import { Opportunity, OpportunityDetail } from "../types";
 import { CustomError } from "../middleware/errorHandler";
 
 export class OpportunityService {
-  private opportunityRepository: OpportunityRepository;
-
   constructor() {
-    this.opportunityRepository = new OpportunityRepository();
+    // No need to initialize repository - using singleton
   }
 
   async getOpportunities(
@@ -28,7 +26,7 @@ export class OpportunityService {
     };
   }> {
     const result =
-      await this.opportunityRepository.findOpportunitiesWithPagination(
+      await opportunityRepository.findOpportunitiesWithPagination(
         filters,
         pagination
       );
@@ -46,7 +44,7 @@ export class OpportunityService {
 
   async getOpportunityById(id: string): Promise<OpportunityDetail> {
     const opportunity =
-      await this.opportunityRepository.findOpportunityWithDetailById(id);
+      await opportunityRepository.findOpportunityWithDetailById(id);
 
     if (!opportunity) {
       throw new CustomError("Opportunity not found", 404);
@@ -61,18 +59,18 @@ export class OpportunityService {
 
   async getFeaturedOpportunities(): Promise<Opportunity[]> {
     const opportunities =
-      await this.opportunityRepository.findFeaturedOpportunities();
+      await opportunityRepository.findFeaturedOpportunities();
     return opportunities.map((opp) => this.formatOpportunity(opp));
   }
 
   async getTrendingOpportunities(): Promise<Opportunity[]> {
     const opportunities =
-      await this.opportunityRepository.findTrendingOpportunities();
+      await opportunityRepository.findTrendingOpportunities();
     return opportunities.map((opp) => this.formatOpportunity(opp));
   }
 
   async getSimilarOpportunities(id: string): Promise<Opportunity[]> {
-    const opportunity = await this.opportunityRepository.findOpportunityById(
+    const opportunity = await opportunityRepository.findOpportunityById(
       id
     );
     if (!opportunity) {
@@ -80,16 +78,16 @@ export class OpportunityService {
     }
 
     const similarOpportunities =
-      await this.opportunityRepository.findSimilarOpportunities(id);
+      await opportunityRepository.findSimilarOpportunities(id);
     return similarOpportunities.map((opp) => this.formatOpportunity(opp));
   }
 
   async incrementApplicationCount(opportunityId: string): Promise<void> {
-    await this.opportunityRepository.incrementApplicationCount(opportunityId);
+    await opportunityRepository.incrementApplicationCount(opportunityId);
   }
 
   async incrementSaveCount(opportunityId: string): Promise<void> {
-    await this.opportunityRepository.incrementSaveCount(opportunityId);
+    await opportunityRepository.incrementSaveCount(opportunityId);
   }
 
   // User interaction methods
@@ -97,14 +95,14 @@ export class OpportunityService {
     userId: string,
     opportunityId: string
   ): Promise<{ saved: boolean }> {
-    const opportunity = await this.opportunityRepository.findOpportunityById(
+    const opportunity = await opportunityRepository.findOpportunityById(
       opportunityId
     );
     if (!opportunity) {
       throw new CustomError("Opportunity not found", 404);
     }
 
-    const saved = await this.opportunityRepository.saveOpportunity(
+    const saved = await opportunityRepository.saveOpportunity(
       userId,
       opportunityId
     );
@@ -115,14 +113,14 @@ export class OpportunityService {
     userId: string,
     opportunityId: string
   ): Promise<{ saved: boolean }> {
-    const opportunity = await this.opportunityRepository.findOpportunityById(
+    const opportunity = await opportunityRepository.findOpportunityById(
       opportunityId
     );
     if (!opportunity) {
       throw new CustomError("Opportunity not found", 404);
     }
 
-    const unsaved = await this.opportunityRepository.unsaveOpportunity(
+    const unsaved = await opportunityRepository.unsaveOpportunity(
       userId,
       opportunityId
     );
@@ -133,7 +131,7 @@ export class OpportunityService {
     userId: string,
     pagination: { page: number; limit: number }
   ): Promise<{ opportunities: Opportunity[]; total: number }> {
-    const result = await this.opportunityRepository.findSavedOpportunities(
+    const result = await opportunityRepository.findSavedOpportunities(
       userId,
       pagination
     );
@@ -151,14 +149,14 @@ export class OpportunityService {
     opportunityId: string,
     applicationData?: any
   ): Promise<{ applied: boolean; applicationId: string }> {
-    const opportunity = await this.opportunityRepository.findOpportunityById(
+    const opportunity = await opportunityRepository.findOpportunityById(
       opportunityId
     );
     if (!opportunity) {
       throw new CustomError("Opportunity not found", 404);
     }
 
-    const result = await this.opportunityRepository.applyToOpportunity(
+    const result = await opportunityRepository.applyToOpportunity(
       userId,
       opportunityId,
       applicationData
@@ -175,7 +173,7 @@ export class OpportunityService {
   }
 
   async getUserApplications(userId: string): Promise<any[]> {
-    const applications = await this.opportunityRepository.findUserApplications(
+    const applications = await opportunityRepository.findUserApplications(
       userId
     );
 
@@ -195,7 +193,7 @@ export class OpportunityService {
     opportunityId: string,
     platform: "whatsapp" | "twitter" | "email" | "link"
   ): Promise<{ shareUrl: string }> {
-    const opportunity = await this.opportunityRepository.findOpportunityById(
+    const opportunity = await opportunityRepository.findOpportunityById(
       opportunityId
     );
     if (!opportunity) {
@@ -239,14 +237,14 @@ export class OpportunityService {
     userId: string,
     opportunityId: string
   ): Promise<{ viewed: boolean }> {
-    const opportunity = await this.opportunityRepository.findOpportunityById(
+    const opportunity = await opportunityRepository.findOpportunityById(
       opportunityId
     );
     if (!opportunity) {
       throw new CustomError("Opportunity not found", 404);
     }
 
-    const viewed = await this.opportunityRepository.recordOpportunityView(
+    const viewed = await opportunityRepository.recordOpportunityView(
       userId,
       opportunityId
     );
@@ -311,3 +309,5 @@ export class OpportunityService {
     };
   }
 }
+
+export const opportunityService = new OpportunityService();
