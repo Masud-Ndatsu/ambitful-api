@@ -128,7 +128,7 @@ export class AIDraftsService {
       if (error instanceof CustomError) {
         throw error;
       }
-      throw new CustomError("Failed to review draft", 500);
+      throw new CustomError(error.message || "Failed to review draft", 500);
     }
   }
 
@@ -553,17 +553,14 @@ export class AIDraftsService {
       // Use the first extracted opportunity
 
       // Update the draft with new extracted data
-      const updatedDraft = await aiDraftsRepository.updateDraftData(
-        draftId,
-        {
-          extractedEligibility: extractedData.eligibility || [],
-          extractedBenefits: extractedData.benefits || [],
-          extractedApplicationInstructions:
-            extractedData.applicationInstructions || [],
-          extractedFullDescription: extractedData.fullDescription || null,
-          extractedLink: extractedData.applicationLink || draft.extractedLink,
-        }
-      );
+      const updatedDraft = await aiDraftsRepository.updateDraftData(draftId, {
+        extractedEligibility: extractedData.eligibility || [],
+        extractedBenefits: extractedData.benefits || [],
+        extractedApplicationInstructions:
+          extractedData.applicationInstructions || [],
+        extractedFullDescription: extractedData.fullDescription || null,
+        extractedLink: extractedData.applicationLink || draft.extractedLink,
+      });
 
       // Format response
       const formattedDraft: AIDraft = {
@@ -631,10 +628,7 @@ export class AIDraftsService {
         throw new CustomError("Draft not found", 404);
       }
 
-      await aiDraftsRepository.updateDraftPriority(
-        draftId,
-        priority
-      );
+      await aiDraftsRepository.updateDraftPriority(draftId, priority);
 
       return {
         message: "Draft priority updated successfully",

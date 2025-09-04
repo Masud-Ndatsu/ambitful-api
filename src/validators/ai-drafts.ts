@@ -2,8 +2,12 @@ import Joi from "joi";
 import { DraftStatus, DraftPriority, OpportunityType } from "../enums";
 
 export const aiDraftsQuerySchema = Joi.object({
-  status: Joi.string().valid(...Object.values(DraftStatus)).optional(),
-  priority: Joi.string().valid(...Object.values(DraftPriority)).optional(),
+  status: Joi.string()
+    .valid(...Object.values(DraftStatus))
+    .optional(),
+  priority: Joi.string()
+    .valid(...Object.values(DraftPriority))
+    .optional(),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(10),
 });
@@ -20,7 +24,7 @@ export const reviewDraftSchema = Joi.object({
     fullDescription: Joi.string().min(1).optional(),
     deadline: Joi.string().isoDate().optional(),
     location: Joi.string().min(1).max(200).optional(),
-    amount: Joi.string().optional(),
+    amount: Joi.string().optional().empty(null),
     link: Joi.string().uri().optional(),
     eligibility: Joi.array().items(Joi.string().min(1)).optional(),
     benefits: Joi.array().items(Joi.string().min(1)).optional(),

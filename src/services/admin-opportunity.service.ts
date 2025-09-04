@@ -92,21 +92,22 @@ export class AdminOpportunityService {
 
   async updateOpportunity(id: string, updateData: any): Promise<Opportunity> {
     // Check if opportunity exists
-    const existingOpportunity =
-      await opportunityRepository.findOpportunityById(id);
+    const existingOpportunity = await opportunityRepository.findOpportunityById(
+      id
+    );
     if (!existingOpportunity) {
       throw new CustomError("Opportunity not found", 404);
     }
 
-    const updatedOpportunity =
-      await opportunityRepository.updateOpportunity(id, updateData);
+    const updatedOpportunity = await opportunityRepository.updateOpportunity(
+      id,
+      updateData
+    );
     return this.formatOpportunity(updatedOpportunity);
   }
 
   async deleteOpportunity(id: string): Promise<{ message: string }> {
-    const opportunity = await opportunityRepository.findOpportunityById(
-      id
-    );
+    const opportunity = await opportunityRepository.findOpportunityById(id);
     if (!opportunity) {
       throw new CustomError("Opportunity not found", 404);
     }
@@ -119,6 +120,26 @@ export class AdminOpportunityService {
     ids: string[],
     action: "publish" | "archive" | "delete"
   ): Promise<{ message: string; affected: number }> {
+    // If action is publish, validate that all opportunities are reviewed
+    if (action === "publish") {
+      const opportunities = await opportunityRepository.findOpportunitiesByIds(
+        ids
+      );
+      const nonReviewedOpportunities = opportunities.filter(
+        (opp) => opp.status !== "reviewed"
+      );
+
+      if (nonReviewedOpportunities.length > 0) {
+        const nonReviewedTitles = nonReviewedOpportunities
+          .map((opp) => opp.title)
+          .join(", ");
+        throw new CustomError(
+          `Cannot publish opportunities that haven't been reviewed.`,
+          400
+        );
+      }
+    }
+
     const affected = await opportunityRepository.bulkUpdateOpportunities(
       ids,
       action
@@ -137,9 +158,7 @@ export class AdminOpportunityService {
   }
 
   async getOpportunityAnalytics(id: string): Promise<OpportunityAnalytics> {
-    const analytics = await opportunityRepository.getOpportunityAnalytics(
-      id
-    );
+    const analytics = await opportunityRepository.getOpportunityAnalytics(id);
 
     if (!analytics) {
       throw new CustomError("Opportunity not found", 404);
