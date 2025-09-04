@@ -243,11 +243,24 @@ export class AIDraftsRepository {
 
   async updateDraftData(
     id: string,
-    data: Prisma.AIDraftUpdateInput
+    data: Prisma.AIDraftUpdateInput | any
   ): Promise<AIDraft> {
     return await prisma.aIDraft.update({
       where: { id },
-      data,
+      data: {
+        extractedTitle: data.title,
+        extractedDescription: data.description,
+        extractedAmount: data.amount,
+        extractedCategory: data.category,
+        extractedApplicationInstructions: data.applicationInstructions,
+        extractedBenefits: data.benefits,
+        extractedDeadline: data.deadline,
+        extractedEligibility: data.eligibility,
+        extractedLocation: data.location,
+        extractedFullDescription: data.fullDescription,
+        extractedLink: data.link,
+        extractedType: data.type,
+      },
     });
   }
 

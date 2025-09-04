@@ -54,7 +54,7 @@ export const updateOpportunitySchema = Joi.object({
 export const bulkActionSchema = Joi.object({
   ids: Joi.array().items(Joi.string()).min(1).required(),
   action: Joi.string()
-    .valid(...Object.values(OpportunityStatus))
+    .valid("publish", "draft", "achieve", "delete")
     .required(),
 });
 

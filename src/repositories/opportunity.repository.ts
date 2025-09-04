@@ -976,23 +976,6 @@ export class OpportunityRepository {
         return result.count;
       }
 
-      // If action is publish and is aisGenerated is true, check reviewed status
-      if (action === "publish") {
-        const opportunities = await prisma.opportunity.findMany({
-          where: { id: { in: ids } },
-        });
-        const notReviewed = opportunities.filter(
-          (op) => op.isGenerated && op.status !== OpportunityStatus.REVIEWED
-        );
-        if (notReviewed.length > 0) {
-          throw new Error(
-            `Cannot publish opportunities that are not reviewed: ${notReviewed
-              .map((op) => op.title)
-              .join(", ")}`
-          );
-        }
-      }
-
       const status =
         action === "publish"
           ? OpportunityStatus.PUBLISHED
@@ -1054,6 +1037,24 @@ export class OpportunityRepository {
       };
     } catch (error) {
       console.error("Error in getOpportunityAnalytics:", error);
+      throw error;
+    }
+  }
+
+  async findOpportunitiesByIds(ids: string[]): Promise<any[]> {
+    try {
+      return await prisma.opportunity.findMany({
+        where: {
+          id: { in: ids }
+        },
+        select: {
+          id: true,
+          title: true,
+          status: true,
+        }
+      });
+    } catch (error) {
+      console.error("Error in findOpportunitiesByIds:", error);
       throw error;
     }
   }
