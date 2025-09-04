@@ -8,8 +8,67 @@ export interface User {
   signupDate: string;
   lastActive: string;
   interests: string[];
+  bio?: string;
+  skills: string[];
   profilePicture?: string;
+  
+  // Enhanced profile for AI personalization
+  academicLevel?: string;
+  fieldOfStudy?: string;
+  careerStage?: string;
+  goals: string[];
+  preferences?: any;
+  personalityTraits: string[];
+  learningStyle?: string;
+  aiInteractionPrefs?: any;
+  timeZone?: string;
+  languages: string[];
+  workExperience?: string;
+  currentFocus: string[];
+  
   role: "user" | "admin";
+  linkedinId?: string;
+  linkedinProfile?: LinkedInProfile;
+  linkedinAccessToken?: string;
+  linkedinTokenExpiresAt?: string;
+}
+
+export interface LinkedInProfile {
+  id: string;
+  firstName: string;
+  lastName: string;
+  headline?: string;
+  summary?: string;
+  industry?: string;
+  location?: string;
+  pictureUrl?: string;
+  publicProfileUrl?: string;
+  positions?: LinkedInPosition[];
+  educations?: LinkedInEducation[];
+  skills?: string[];
+  connectedAt: string;
+  lastSyncAt: string;
+}
+
+export interface LinkedInPosition {
+  id: string;
+  title: string;
+  company: string;
+  description?: string;
+  startDate?: string;
+  endDate?: string;
+  isCurrent: boolean;
+  location?: string;
+}
+
+export interface LinkedInEducation {
+  id: string;
+  schoolName: string;
+  degree?: string;
+  fieldOfStudy?: string;
+  startDate?: string;
+  endDate?: string;
+  description?: string;
 }
 
 export interface Opportunity {

@@ -12,6 +12,7 @@ import userRoutes from "./routes/users";
 import adminRoutes from "./routes/admin";
 import opportunityRoutes from "./routes/opportunities";
 import chatRoutes from "./routes/chat";
+import linkedinRoutes from "./routes/linkedin";
 
 import crawlerRoutes from "./routes/crawler";
 import { globalErrorHandler, notFound } from "./middleware/errorHandler";
@@ -31,7 +32,7 @@ app.use(
   cors({
     origin: [
       "https://www.ambitful.ai",
-      "http://localhost:8080",
+      "http://localhost:8081",
       "http://134.122.17.163:80",
     ],
     credentials: true,
@@ -52,6 +53,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/opportunities", opportunityRoutes);
 app.use("/api/crawler", crawlerRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/linkedin", linkedinRoutes);
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });

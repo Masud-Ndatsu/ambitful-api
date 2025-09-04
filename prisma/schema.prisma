@@ -19,8 +19,28 @@ model User {
   signupDate     DateTime   @default(now())
   lastActive     DateTime   @default(now())
   interests      String[]
+  bio            String?
+  skills         String[]
   profilePicture String?
+  
+  // Enhanced profile for AI personalization
+  academicLevel     String?    // "high_school", "undergraduate", "graduate", "postgraduate", "professional"
+  fieldOfStudy      String?    // Primary academic/professional field
+  careerStage       String?    // "student", "entry_level", "mid_level", "senior_level", "executive"
+  goals             String[]   // Short and long term goals
+  preferences       Json?      // Communication style, content preferences, etc.
+  personalityTraits String[]   // Traits that affect learning/communication style
+  learningStyle     String?    // "visual", "auditory", "kinesthetic", "reading_writing"
+  aiInteractionPrefs Json?     // Preferences for AI interactions (tone, detail level, etc.)
+  timeZone          String?    // For scheduling and time-relevant recommendations
+  languages         String[]   // Spoken languages for context
+  workExperience    String?    // Years of work experience category
+  currentFocus      String[]   // Current areas of focus or learning
   role           String   @default("user")
+  linkedinId     String?
+  linkedinProfile Json?
+  linkedinAccessToken String?
+  linkedinTokenExpiresAt DateTime?
 
   conversations      ChatConversation[]
   tokens             Token[]

@@ -11,9 +11,13 @@ export const validateBody = (schema: Joi.ObjectSchema) => {
         field: detail.path.join("."),
         message: detail.message,
       }));
-      console.log({ errorDetails });
 
-      return ErrorResponse(res, errorDetails[0].message, 400, errorDetails);
+      return ErrorResponse(
+        res,
+        errorDetails[0].message,
+        400,
+        errorDetails[0].message
+      );
     }
 
     req.body = value;
@@ -35,7 +39,7 @@ export const validateParams = (schema: Joi.ObjectSchema) => {
         res,
         "Parameter validation failed",
         400,
-        errorDetails
+        errorDetails[0].message
       );
     }
 
@@ -54,7 +58,12 @@ export const validateQuery = (schema: Joi.ObjectSchema) => {
         message: detail.message,
       }));
 
-      return ErrorResponse(res, errorDetails[0].message, 400, errorDetails);
+      return ErrorResponse(
+        res,
+        errorDetails[0].message,
+        400,
+        errorDetails[0].message
+      );
     }
 
     req.query = value;
