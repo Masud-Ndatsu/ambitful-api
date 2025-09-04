@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { Opportunity, ParsedOpportunity } from "../types";
 import { opportunityRepository } from "../repositories/opportunity.repository";
+import { profileContextService } from "./profileContext.service";
 import { CustomError } from "../middleware/errorHandler";
 import { DEFAULT_CATEGORIES, OpportunityType } from "../enums";
 
@@ -10,6 +11,24 @@ export interface ChatContext {
     email: string;
     country: string;
     interests: string[];
+    bio?: string;
+    skills: string[];
+
+    // Enhanced profile for AI personalization
+    academicLevel?: string;
+    fieldOfStudy?: string;
+    careerStage?: string;
+    goals?: string[];
+    personalityTraits?: string[];
+    learningStyle?: string;
+    timeZone?: string;
+    languages?: string[];
+    workExperience?: string;
+    currentFocus?: string[];
+
+    // AI preferences
+    preferences?: any;
+    aiInteractionPrefs?: any;
   };
   recentMessages: Array<{
     content: string;
@@ -136,10 +155,11 @@ ${blockHtml}
 
   async generateResponse(
     message: string,
-    context: ChatContext
+    context: ChatContext,
+    userId?: string
   ): Promise<AIResponse> {
     try {
-      const systemPrompt = this.buildSystemPrompt(context);
+      const systemPrompt = await this.buildSystemPrompt(context, userId);
       const conversationHistory = this.buildConversationHistory(
         context.recentMessages
       );
@@ -175,32 +195,210 @@ ${blockHtml}
     }
   }
 
-  private buildSystemPrompt(context: ChatContext): string {
+  private async buildSystemPrompt(
+    context: ChatContext,
+    userId?: string
+  ): Promise<string> {
     const { userProfile, contextType } = context;
 
-    let basePrompt = `You are a personalized AI career advisor for ${
-      userProfile.name
-    }, helping them find opportunities and advance their career. 
+    let basePrompt = `You are an expert AI Career Advisor and Educational Consultant with deep expertise across multiple industries and academic disciplines. Your role is to provide comprehensive, personalized career guidance for ${userProfile.name}.
 
-User Profile:
+## Your Expertise Includes:
+- Academic pathway planning and degree/program selection
+- Industry-specific career development strategies  
+- Professional skill development and competency mapping
+- Opportunity identification (scholarships, internships, fellowships, grants, jobs)
+- Personal branding and professional networking
+- Interview preparation and application strategies
+- Salary negotiation and career transition planning
+- Work-life balance and professional growth optimization
+- Cross-cultural career guidance for international opportunities
+
+## Core Responsibilities:
+1. Analyze the user's complete profile to understand their unique situation
+2. Provide strategic, actionable advice tailored to their academic and career stage
+3. Recommend specific opportunities, programs, and pathways
+4. Suggest concrete next steps with timelines and resource links
+5. Address both immediate needs and long-term career aspirations
+6. Adapt communication style to match their learning preferences
+7. Consider cultural, geographical, and industry-specific factors`;
+
+    // Get enhanced profile context if userId is available
+    if (userId) {
+      try {
+        const userContext = await profileContextService.getUserContext(userId);
+
+        console.log({ userContext });
+
+        basePrompt += `\n\n## User Profile Analysis:`;
+
+        // Personal Background
+        basePrompt += `\n**Personal Background:**
+- Name: ${userContext.personalInfo.name}
+- Location: ${userContext.personalInfo.country}
+- Time Zone: ${userContext.personalInfo.timeZone || "Not specified"}
+- Languages: ${
+          userContext.personalInfo.languages.length > 0
+            ? userContext.personalInfo.languages.join(", ")
+            : "Not specified"
+        }`;
+
+        // Academic Profile
+        if (
+          userContext.academicProfile.level ||
+          userContext.academicProfile.fieldOfStudy ||
+          userContext.academicProfile.workExperience
+        ) {
+          basePrompt += `\n\n**Academic & Professional Standing:**`;
+          if (userContext.academicProfile.level) {
+            basePrompt += `\n- Academic Level: ${userContext.academicProfile.level.replace(
+              "_",
+              " "
+            )}`;
+          }
+          if (userContext.academicProfile.fieldOfStudy) {
+            basePrompt += `\n- Field of Study: ${userContext.academicProfile.fieldOfStudy}`;
+          }
+          if (userContext.professionalProfile.careerStage) {
+            basePrompt += `\n- Career Stage: ${userContext.professionalProfile.careerStage.replace(
+              "_",
+              " "
+            )}`;
+          }
+          if (userContext.academicProfile.workExperience) {
+            basePrompt += `\n- Work Experience: ${userContext.academicProfile.workExperience} years`;
+          }
+        }
+
+        // Skills and Competencies
+        if (
+          userContext.professionalProfile.skills.length > 0 ||
+          userContext.personalityProfile.interests.length > 0
+        ) {
+          basePrompt += `\n\n**Skills & Interests:**`;
+          if (userContext.professionalProfile.skills.length > 0) {
+            basePrompt += `\n- Technical Skills: ${userContext.professionalProfile.skills.join(
+              ", "
+            )}`;
+          }
+          if (userContext.personalityProfile.interests.length > 0) {
+            basePrompt += `\n- Areas of Interest: ${userContext.personalityProfile.interests.join(
+              ", "
+            )}`;
+          }
+        }
+
+        // Goals and Focus
+        if (
+          userContext.goals.shortTerm.length > 0 ||
+          userContext.goals.longTerm.length > 0 ||
+          userContext.goals.currentFocus.length > 0
+        ) {
+          basePrompt += `\n\n**Goals & Current Focus:**`;
+          if (userContext.goals.currentFocus.length > 0) {
+            basePrompt += `\n- Current Focus Areas: ${userContext.goals.currentFocus.join(
+              ", "
+            )}`;
+          }
+          if (userContext.goals.shortTerm.length > 0) {
+            basePrompt += `\n- Short-term Goals: ${userContext.goals.shortTerm.join(
+              ", "
+            )}`;
+          }
+          if (userContext.goals.longTerm.length > 0) {
+            basePrompt += `\n- Long-term Goals: ${userContext.goals.longTerm.join(
+              ", "
+            )}`;
+          }
+        }
+
+        // Learning and Personality
+        if (
+          userContext.personalityProfile.learningStyle ||
+          userContext.personalityProfile.personalityTraits.length > 0
+        ) {
+          basePrompt += `\n\n**Learning & Communication Preferences:**`;
+          if (userContext.personalityProfile.learningStyle) {
+            basePrompt += `\n- Preferred Learning Style: ${userContext.personalityProfile.learningStyle.replace(
+              "_",
+              "/"
+            )}`;
+          }
+          if (userContext.personalityProfile.personalityTraits.length > 0) {
+            basePrompt += `\n- Personality Traits: ${userContext.personalityProfile.personalityTraits.join(
+              ", "
+            )}`;
+          }
+        }
+
+        // Bio
+        if (userContext.personalityProfile.bio) {
+          basePrompt += `\n\n**Personal Background:**\n${userContext.personalityProfile.bio}`;
+        }
+      } catch (error) {
+        // Fallback to basic profile if enhanced context fails
+        basePrompt += `\n\n## Basic Profile:
 - Name: ${userProfile.name}
 - Country: ${userProfile.country}
-- Interests: ${userProfile.interests.join(", ")}
+- Interests: ${userProfile.interests.join(", ")}`;
+      }
+    } else {
+      basePrompt += `\n\n## Basic Profile:
+- Name: ${userProfile.name}
+- Country: ${userProfile.country}
+- Interests: ${userProfile.interests.join(", ")}`;
+    }
 
-Your role is to provide helpful, personalized career guidance and opportunity recommendations.`;
+    // Context-specific guidance
+    basePrompt += `\n\n## Response Guidelines:`;
 
     switch (contextType) {
       case "opportunity-search":
-        basePrompt += `\n\nFocus on helping the user find relevant opportunities like scholarships, internships, fellowships, and grants that match their profile and interests. Provide specific, actionable advice.`;
+        basePrompt += `
+**OPPORTUNITY SEARCH MODE:**
+- Analyze their academic level and career stage to recommend appropriate opportunities
+- Consider their field of study and interests for relevant matches
+- Provide specific application strategies based on their experience level
+- Include timeline considerations and deadline management advice
+- Suggest both immediate and future opportunities based on their goals
+- Recommend specific platforms, organizations, and databases to search
+- Provide application tips tailored to their academic/professional background`;
         break;
+
       case "career-advice":
-        basePrompt += `\n\nProvide comprehensive career guidance, including skill development, career paths, networking advice, and professional growth strategies tailored to their background.`;
+        basePrompt += `
+**CAREER GUIDANCE MODE:**
+- Provide strategic career planning based on their current academic/professional stage
+- Analyze skill gaps and recommend specific development areas
+- Suggest career pathways that align with their field of study and interests
+- Include industry trends and market insights relevant to their field
+- Recommend networking strategies appropriate for their career stage
+- Provide guidance on professional development and certification opportunities
+- Address both immediate career moves and long-term career evolution`;
         break;
+
       default:
-        basePrompt += `\n\nBe helpful and supportive in all career-related discussions. Adapt your responses based on the conversation context.`;
+        basePrompt += `
+**COMPREHENSIVE ADVISORY MODE:**
+- Adapt your expertise to the specific question or need presented
+- Draw connections between their academic background and career opportunities
+- Provide holistic advice that considers their entire profile
+- Be proactive in identifying opportunities they might not have considered
+- Offer strategic insights based on industry knowledge and trends`;
     }
 
-    basePrompt += `\n\nKeep responses concise but informative. Always be encouraging and provide actionable advice when possible.`;
+    basePrompt += `
+
+## Communication Standards:
+- **Personalization**: Always reference their specific background and goals
+- **Actionability**: Provide concrete steps and specific recommendations
+- **Relevance**: Ensure all advice aligns with their academic level and career stage
+- **Encouragement**: Be supportive while being realistic about challenges
+- **Comprehensiveness**: Address both immediate needs and strategic planning
+- **Cultural Sensitivity**: Consider their geographical and cultural context
+- **Learning Adaptation**: Adjust explanation style to match their learning preferences
+
+Provide detailed, professional advice that demonstrates deep understanding of their unique situation and career landscape.`;
 
     return basePrompt;
   }
@@ -226,44 +424,85 @@ Your role is to provide helpful, personalized career guidance and opportunity re
     context: ChatContext
   ): Promise<string[]> {
     const suggestions: string[] = [];
+    const { userProfile } = context;
 
-    // Generate context-specific suggestions
+    // Generate context-specific suggestions based on enhanced profile
     if (
       context.contextType === "opportunity-search" ||
       message.toLowerCase().includes("opportunity") ||
       message.toLowerCase().includes("scholarship")
     ) {
+      // Academic level-specific suggestions
+      if (userProfile.academicLevel === "undergraduate") {
+        suggestions.push(
+          "Find undergraduate scholarships",
+          "Summer internship programs"
+        );
+      } else if (userProfile.academicLevel === "graduate") {
+        suggestions.push("Graduate fellowships", "Research assistantships");
+      } else if (userProfile.academicLevel === "postgraduate") {
+        suggestions.push("Postdoc opportunities", "Research grants");
+      }
+
+      // Field-specific suggestions
+      if (userProfile.fieldOfStudy) {
+        suggestions.push(`${userProfile.fieldOfStudy} specific opportunities`);
+      }
+
       suggestions.push(
-        "Show me scholarships in my field",
-        "Find internships in my country",
-        "What are the application requirements?",
-        "Help me write a personal statement"
+        "Application deadline calendar",
+        "Personal statement guidance"
       );
     } else if (
       context.contextType === "career-advice" ||
       message.toLowerCase().includes("career")
     ) {
-      suggestions.push(
-        "How can I improve my skills?",
-        "What career paths are available?",
-        "Help me build my network",
-        "Review my career goals"
-      );
+      // Career stage-specific suggestions
+      if (userProfile.careerStage === "student") {
+        suggestions.push(
+          "Career exploration strategies",
+          "Skill building roadmap"
+        );
+      } else if (userProfile.careerStage === "entry_level") {
+        suggestions.push(
+          "First job search strategy",
+          "Professional networking tips"
+        );
+      } else if (userProfile.careerStage === "mid_level") {
+        suggestions.push(
+          "Career advancement strategies",
+          "Leadership development"
+        );
+      }
+
+      // Goal-oriented suggestions
+      if (userProfile.currentFocus && userProfile.currentFocus.length > 0) {
+        suggestions.push(`Develop ${userProfile.currentFocus[0]} expertise`);
+      }
+
+      suggestions.push("Industry transition guidance", "Skill gap analysis");
     } else {
+      // General suggestions based on profile
+      if (userProfile.goals && userProfile.goals.length > 0) {
+        suggestions.push("Help achieve my goals");
+      }
+      if (userProfile.careerStage) {
+        suggestions.push(
+          `${userProfile.careerStage.replace("_", " ")} career advice`
+        );
+      }
       suggestions.push(
-        "Find opportunities for me",
-        "Give me career advice",
-        "Help me plan my next steps",
-        "What skills should I develop?"
+        "Personalized opportunity search",
+        "Career development planning"
       );
     }
 
     // Add interest-based suggestions
-    context.userProfile.interests.forEach((interest) => {
-      suggestions.push(`Find ${interest} opportunities`);
+    userProfile.interests.forEach((interest) => {
+      suggestions.push(`${interest} career paths`);
     });
 
-    return suggestions.slice(0, 4); // Limit to 4 suggestions
+    return [...new Set(suggestions)].slice(0, 6); // Remove duplicates, limit to 6 suggestions
   }
 
   private async findRelatedOpportunities(
@@ -358,17 +597,43 @@ Your role is to provide helpful, personalized career guidance and opportunity re
   }
 
   async generateCareerAdvice(
-    userProfile: any,
+    userId: string,
     specificQuery?: string
   ): Promise<string> {
     try {
-      const prompt = `Provide personalized career advice for ${
-        userProfile.name
-      } from ${
-        userProfile.country
-      } with interests in ${userProfile.interests.join(", ")}.${
-        specificQuery ? ` Specifically: ${specificQuery}` : ""
-      }`;
+      const userContext = await profileContextService.getUserContext(userId);
+      const enhancedContext =
+        await profileContextService.generatePersonalizedContext(userId);
+
+      const prompt = `You are an expert career strategist and educational consultant. Analyze this comprehensive user profile and provide detailed, personalized career advice:
+
+## USER PROFILE ANALYSIS:
+${enhancedContext}
+
+## REQUEST:
+${
+  specificQuery
+    ? `Specific Query: ${specificQuery}`
+    : "Provide comprehensive career guidance and strategic next steps."
+}
+
+## REQUIRED ANALYSIS AREAS:
+1. **Academic Pathway Assessment**: Evaluate their current academic standing and recommend next steps
+2. **Career Progression Strategy**: Map out career advancement opportunities based on their stage and goals
+3. **Skill Development Plan**: Identify critical skills needed for their field and career aspirations
+4. **Opportunity Identification**: Suggest specific programs, certifications, or positions they should pursue
+5. **Timeline & Milestones**: Provide a realistic timeline with measurable milestones
+6. **Industry Context**: Include relevant market trends and demands in their field
+7. **Personal Growth**: Consider their personality traits and learning style in recommendations
+
+## RESPONSE REQUIREMENTS:
+- **Specificity**: Name actual programs, organizations, certifications, or resources
+- **Actionability**: Provide clear next steps they can take immediately
+- **Personalization**: Reference their specific background, goals, and constraints
+- **Strategic Depth**: Address both tactical moves and long-term strategy
+- **Cultural Awareness**: Consider their geographic location and cultural context
+
+Provide a comprehensive response that demonstrates expert-level career counseling tailored to their unique profile.`;
 
       const result = await this.genAI.models.generateContent({
         model: "gemini-2.5-flash",
@@ -386,15 +651,22 @@ Your role is to provide helpful, personalized career guidance and opportunity re
     }
   }
 
-  async generateOpportunityRecommendations(userProfile: any): Promise<string> {
+  async generateOpportunityRecommendations(userId: string): Promise<string> {
     try {
-      const prompt = `Recommend specific types of opportunities (scholarships, internships, fellowships, grants) that would be most suitable for ${
-        userProfile.name
-      } from ${
-        userProfile.country
-      } with interests in ${userProfile.interests.join(
-        ", "
-      )}. Include specific fields, organizations, or programs to look for.`;
+      const enhancedContext =
+        await profileContextService.generatePersonalizedContext(userId);
+
+      const prompt = `You are an AI opportunity advisor. Based on this comprehensive user profile, recommend specific types of opportunities (scholarships, internships, fellowships, grants) that would be most suitable:
+
+${enhancedContext}
+
+Provide specific recommendations including:
+- Types of opportunities that match their profile
+- Specific fields, organizations, or programs to look for
+- Application strategies based on their career stage and goals
+- Timeline recommendations based on their current focus
+
+Be specific and actionable in your recommendations.`;
 
       const result = await this.genAI.models.generateContent({
         model: "gemini-2.5-flash",

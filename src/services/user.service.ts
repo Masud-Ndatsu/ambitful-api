@@ -28,7 +28,21 @@ export class UserService {
       email?: string;
       country?: string;
       interests?: string[];
+      bio?: string;
+      skills?: string[];
       profilePicture?: string;
+      academicLevel?: string;
+      fieldOfStudy?: string;
+      careerStage?: string;
+      goals?: string[];
+      preferences?: any;
+      personalityTraits?: string[];
+      learningStyle?: string;
+      aiInteractionPrefs?: any;
+      timeZone?: string;
+      languages?: string[];
+      workExperience?: string;
+      currentFocus?: string[];
     }
   ): Promise<User> {
     const existingUser = await userRepository.findUserById(userId);
@@ -192,9 +206,30 @@ export class UserService {
       verified: user.verified,
       signupDate: user.signupDate.toISOString(),
       lastActive: user.lastActive.toISOString(),
-      interests: user.interests,
+      interests: user.interests || [],
+      bio: user.bio,
+      skills: user.skills || [],
       profilePicture: user.profilePicture,
+      
+      // Enhanced profile for AI personalization
+      academicLevel: user.academicLevel,
+      fieldOfStudy: user.fieldOfStudy,
+      careerStage: user.careerStage,
+      goals: user.goals || [],
+      preferences: user.preferences,
+      personalityTraits: user.personalityTraits || [],
+      learningStyle: user.learningStyle,
+      aiInteractionPrefs: user.aiInteractionPrefs,
+      timeZone: user.timeZone,
+      languages: user.languages || [],
+      workExperience: user.workExperience,
+      currentFocus: user.currentFocus || [],
+      
       role: user.role.toLowerCase() as "user" | "admin",
+      linkedinId: user.linkedinId,
+      linkedinProfile: user.linkedinProfile,
+      linkedinAccessToken: user.linkedinAccessToken,
+      linkedinTokenExpiresAt: user.linkedinTokenExpiresAt?.toISOString(),
     };
   }
 }

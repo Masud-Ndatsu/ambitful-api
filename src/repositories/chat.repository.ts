@@ -214,6 +214,24 @@ export class ChatRepository {
           email: true,
           country: true,
           interests: true,
+          bio: true,
+          skills: true,
+
+          // Enhanced profile for AI personalization
+          academicLevel: true,
+          fieldOfStudy: true,
+          careerStage: true,
+          goals: true,
+          personalityTraits: true,
+          learningStyle: true,
+          timeZone: true,
+          languages: true,
+          workExperience: true,
+          currentFocus: true,
+
+          // AI preferences
+          preferences: true,
+          aiInteractionPrefs: true,
         },
       }),
       this.getConversationHistory(conversationId, userId, 10),

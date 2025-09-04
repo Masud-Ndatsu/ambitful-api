@@ -76,7 +76,8 @@ export class ChatService {
       // Generate AI response
       const aiResponse: AIResponse = await this.geminiService.generateResponse(
         message,
-        aiContext
+        aiContext,
+        userId
       );
 
       // Save AI response

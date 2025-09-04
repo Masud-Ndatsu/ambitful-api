@@ -62,9 +62,30 @@ export class AuthService {
       verified: user.verified,
       signupDate: user.signupDate.toISOString(),
       lastActive: user.lastActive.toISOString(),
-      interests: user.interests,
+      interests: user.interests || [],
+      bio: user.bio,
+      skills: user.skills || [],
       profilePicture: user.profilePicture as string,
+      
+      // Enhanced profile for AI personalization
+      academicLevel: user.academicLevel,
+      fieldOfStudy: user.fieldOfStudy,
+      careerStage: user.careerStage,
+      goals: user.goals || [],
+      preferences: user.preferences,
+      personalityTraits: user.personalityTraits || [],
+      learningStyle: user.learningStyle,
+      aiInteractionPrefs: user.aiInteractionPrefs,
+      timeZone: user.timeZone,
+      languages: user.languages || [],
+      workExperience: user.workExperience,
+      currentFocus: user.currentFocus || [],
+      
       role: user.role.toLowerCase() as "admin" | "user",
+      linkedinId: user.linkedinId,
+      linkedinProfile: user.linkedinProfile as any,
+      linkedinAccessToken: user.linkedinAccessToken,
+      linkedinTokenExpiresAt: user.linkedinTokenExpiresAt?.toISOString(),
     };
 
     return { user: formattedUser, token };
@@ -103,9 +124,30 @@ export class AuthService {
       verified: user.verified,
       signupDate: user.signupDate.toISOString(),
       lastActive: new Date().toISOString(),
-      interests: user.interests,
+      interests: user.interests || [],
+      bio: user.bio,
+      skills: user.skills || [],
       profilePicture: user.profilePicture as string,
+      
+      // Enhanced profile for AI personalization
+      academicLevel: user.academicLevel,
+      fieldOfStudy: user.fieldOfStudy,
+      careerStage: user.careerStage,
+      goals: user.goals || [],
+      preferences: user.preferences,
+      personalityTraits: user.personalityTraits || [],
+      learningStyle: user.learningStyle,
+      aiInteractionPrefs: user.aiInteractionPrefs,
+      timeZone: user.timeZone,
+      languages: user.languages || [],
+      workExperience: user.workExperience,
+      currentFocus: user.currentFocus || [],
+      
       role: user.role.toLowerCase() as "admin" | "user",
+      linkedinId: user.linkedinId,
+      linkedinProfile: user.linkedinProfile as any,
+      linkedinAccessToken: user.linkedinAccessToken,
+      linkedinTokenExpiresAt: user.linkedinTokenExpiresAt?.toISOString(),
     };
 
     return { user: formattedUser, token };

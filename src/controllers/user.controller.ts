@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { userService } from '../services/user.service';
+import { profileContextService } from '../services/profileContext.service';
 import { asyncHandler } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
 import { SuccessResponse } from '../utils/response';
@@ -20,14 +21,48 @@ export class UserController {
   updateProfile = asyncHandler(
     async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
       const userId = req.user!.userId;
-      const { name, email, country, interests, profilePicture } = req.body;
+      const { 
+        name, 
+        email, 
+        country, 
+        interests, 
+        bio, 
+        skills, 
+        profilePicture,
+        academicLevel,
+        fieldOfStudy,
+        careerStage,
+        goals,
+        preferences,
+        personalityTraits,
+        learningStyle,
+        aiInteractionPrefs,
+        timeZone,
+        languages,
+        workExperience,
+        currentFocus
+      } = req.body;
 
       const user = await userService.updateUserProfile(userId, {
         name,
         email,
         country,
         interests,
-        profilePicture
+        bio,
+        skills,
+        profilePicture,
+        academicLevel,
+        fieldOfStudy,
+        careerStage,
+        goals,
+        preferences,
+        personalityTraits,
+        learningStyle,
+        aiInteractionPrefs,
+        timeZone,
+        languages,
+        workExperience,
+        currentFocus
       });
 
       SuccessResponse(res, user, 'Profile updated successfully');
