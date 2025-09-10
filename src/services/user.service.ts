@@ -60,10 +60,7 @@ export class UserService {
       }
     }
 
-    const updatedUser = await userRepository.updateUser(
-      userId,
-      updateData
-    );
+    const updatedUser = await userRepository.updateUser(userId, updateData);
 
     // Log the activity
     await userRepository.createUserActivity({
@@ -181,9 +178,7 @@ export class UserService {
       throw new CustomError("User not found", 404);
     }
 
-    const activities = await userRepository.findUserActivities(
-      targetUserId
-    );
+    const activities = await userRepository.findUserActivities(targetUserId);
 
     return activities.map((activity) => ({
       id: activity.id,
@@ -210,7 +205,7 @@ export class UserService {
       bio: user.bio,
       skills: user.skills || [],
       profilePicture: user.profilePicture,
-      
+
       // Enhanced profile for AI personalization
       academicLevel: user.academicLevel,
       fieldOfStudy: user.fieldOfStudy,
@@ -224,7 +219,7 @@ export class UserService {
       languages: user.languages || [],
       workExperience: user.workExperience,
       currentFocus: user.currentFocus || [],
-      
+
       role: user.role.toLowerCase() as "user" | "admin",
       linkedinId: user.linkedinId,
       linkedinProfile: user.linkedinProfile,
