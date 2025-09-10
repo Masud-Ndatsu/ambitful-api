@@ -3,6 +3,10 @@ import { verifyToken, JWTPayload } from '../utils/jwt';
 
 export interface AuthRequest extends Request {
   user?: JWTPayload;
+  body: any;
+  query: any;
+  params: any;
+  headers: any;
 }
 
 export const authenticateToken = (req: AuthRequest, res: Response, next: NextFunction): void => {
